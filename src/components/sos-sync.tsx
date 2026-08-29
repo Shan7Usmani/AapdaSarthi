@@ -1,0 +1,183 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  useSosStore,
+  type Rescuer,
+  type ResourceRequest,
+  type SosItem,
+} from "@/store/sos-store";
+
+/**
+ * Optional cross-device SOS sync (mount once in the root layout).
+ *
+ * When Supabase creds are configured:
+ *  - pulls existing SOS + resource requests + rescuers on mount and merges them in,
+ *  - subscribes to Realtime so another browser/device sees updates live,
+ *  - debounce-writes local changes up to the shared tables.
+ *
+ * When not configured, this component is a no-op and the app keeps its
+ * existing localStorage-only behaviour (same-browser demo still works).
+ */
+
+const TABLES = {
+  sos: "sos_items",
+  requests: "resource_requests",
+  rescuers: "rescuers",
+} as const;
+
+async function readAll<T extends { id: string }>(table: string): Promise<T[]> {
+  const db = getSupabase();
+  if (!db) return [];
+  const { data, error } = await db.from(table).select("data");
+  if (error) return [];
+  return (data ?? []).map((r) => r.data as T);
+}
+
+export function SosSync() {
+  const hydratedRef = useRef(false);
+  const inFlight = useRef<Promise<void> | null>(null);
+
+  // Subscribe to store changes and debounce-write them up.
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    const store = useSosStore;
+    // hydration snapshot already happened via persist middleware; nothing to seed here.
+
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+
+    const writeAll = () => {
+      const { sos, requests, rescuers } = store.getState();
+      const db = getSupabase();
+      if (!db) return;
+      const work = (async () => {
+        for (const s of sos) {
+          await db.from(TABLES.sos).upsert({ id: s.id, data: s });
+        }
+        for (const r of requests) {
+          await db.from(TABLES.requests).upsert({ id: r.id, data: r });
+        }
+        for (const res of rescuers) {
+          await db.from(TABLES.rescuers).upsert({ id: res.id, data: res });
+        }
+      })();
+      inFlight.current = work;
+      void work.finally(() => {
+        inFlight.current = null;
+      });
+    };
+
+    const unsub = store.subscribe((state, prev) => {
+      if (
+        state.sos === prev.sos &&
+        state.requests === prev.requests &&
+        state.rescuers === prev.rescuers
+      )
+        return;
+      if (debounce) clearTimeout(debounce);
+      debounce = setTimeout(writeAll, 500);
+    });
+
+    return () => {
+      if (debounce) clearTimeout(debounce);
+      unsub();
+    };
+  }, []);
+
+  // Pull once + realtime subscribe.
+  useEffect(() => {
+    if (!isSupabaseConfigured() || hydratedRef.current) {
+      hydratedRef.current = true;
+      return;
+    }
+    hydratedRef.current = true;
+
+    const db = getSupabase();
+    if (!db) return;
+
+    let disposed = false;
+
+    (async () => {
+      const [remoteSos, remoteRequests, remoteRescuers] = await Promise.all([
+        readAll<SosItem>(TABLES.sos),
+        readAll<ResourceRequest>(TABLES.requests),
+        readAll<Rescuer>(TABLES.rescuers),
+      ]);
+      if (disposed) return;
+
+      const { sos, requests, rescuers } = useSosStore.getState();
+      const merge = <T extends { id: string; timestamp: string }>(local: T[], remote: T[]): T[] => {
+        const map = new Map(local.map((x) => [x.id, x]));
+        for (const r of remote) {
+          const existing = map.get(r.id);
+          // remote wins on timestamp order (latest).
+          if (!existing) map.set(r.id, r);
+          else if (String(existing.timestamp) < String(r.timestamp)) map.set(r.id, r);
+        }
+        return Array.from(map.values()).sort(
+          (a, b) => String(b.timestamp).localeCompare(String(a.timestamp))
+        );
+      };
+      const mergeRescuers = (local: Rescuer[], remote: Rescuer[]): Rescuer[] => {
+        const map = new Map(local.map((x) => [x.id, x]));
+        for (const r of remote) {
+          const existing = map.get(r.id);
+          if (!existing) map.set(r.id, r);
+          else if (String(existing.lastSeen) < String(r.lastSeen)) map.set(r.id, r);
+        }
+        return Array.from(map.values());
+      };
+      useSosStore.setState({
+        sos: merge(sos, remoteSos),
+        requests: merge(requests, remoteRequests),
+        rescuers: mergeRescuers(rescuers, remoteRescuers),
+      });
+    })();
+
+    const channel = db
+      .channel("aapdasarthi-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: TABLES.sos },
+        (payload) => {
+          const row = payload.new as { id: string; data: SosItem } | null;
+          if (!row) return;
+          const cur = useSosStore.getState();
+          const next = cur.sos.filter((s) => s.id !== row.id);
+          useSosStore.setState({ sos: [row.data, ...next] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: TABLES.requests },
+        (payload) => {
+          const row = payload.new as { id: string; data: ResourceRequest } | null;
+          if (!row) return;
+          const cur = useSosStore.getState();
+          const next = cur.requests.filter((r) => r.id !== row.id);
+          useSosStore.setState({ requests: [row.data, ...next] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: TABLES.rescuers },
+        (payload) => {
+          const row = payload.new as { id: string; data: Rescuer } | null;
+          if (!row) return;
+          const cur = useSosStore.getState();
+          const next = cur.rescuers.filter((r) => r.id !== row.id);
+          useSosStore.setState({ rescuers: [row.data, ...next] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      disposed = true;
+      db.removeChannel(channel);
+    };
+  }, []);
+
+  return null;
+}
