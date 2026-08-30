@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
 
-export default nextConfig;
+  cacheOnNavigation: true,
+
+  additionalPrecacheEntries: [
+    {
+      url: "/citizen",
+      revision: "1",
+    },
+  ],
+});
+
+const nextConfig: NextConfig = {};
+
+export default withSerwist(nextConfig);

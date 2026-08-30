@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SosSync } from "@/components/sos-sync";
 import { DemoSeed } from "@/components/demo-seed";
@@ -15,9 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aapda Saarthi — AI Disaster Response Command Center",
+  applicationName: "Aapda Saarthi",
+
+  title: "Aapda Saarthi - AI Disaster Response Command Center",
+
   description:
     "AI-powered flood response intelligence: live risk mapping, evacuation routing, resource allocation and multilingual alerting.",
+
+  appleWebApp: {
+    capable: true,
+    title: "Aapda Saarthi",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0788D1",
 };
 
 export default function RootLayout({

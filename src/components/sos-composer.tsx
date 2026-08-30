@@ -21,6 +21,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const EMERGENCY_SMS_NUMBER =
+  process.env.NEXT_PUBLIC_EMERGENCY_SMS_NUMBER ||
+  "+91XXXXXXXXXX";
+
 export function SosComposer() {
   const addSos = useSosStore((s) => s.addSos);
   const [name, setName] = useState("");
@@ -33,6 +37,13 @@ export function SosComposer() {
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const [sentId, setSentId] = useState<string | null>(null);
   const [routedTo, setRoutedTo] = useState<string | null>(null);
+ 
+  const [deliveryMode, setDeliveryMode] =
+    useState<"online" | "sms" | null>(null);
+
+  // PWA network status
+  const [isOnline, setIsOnline] = useState(true);
+
 
   // voice recording
   const [recording, setRecording] = useState(false);
@@ -41,6 +52,27 @@ export function SosComposer() {
   const chunksRef = useRef<Blob[]>([]);
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
+
+  // PWA network status
+  useEffect(() => {
+  setIsOnline(navigator.onLine);
+
+  const handleOnline = () => {
+    setIsOnline(true);
+  };
+
+  const handleOffline = () => {
+    setIsOnline(false);
+  };
+
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+
+  return () => {
+    window.removeEventListener("online", handleOnline);
+    window.removeEventListener("offline", handleOffline);
+  };
+  }, []);
 
   const addMedia = (m: MediaAttachment) => setMedia((prev) => [...prev, m]);
 
@@ -96,25 +128,117 @@ export function SosComposer() {
     }
   };
 
-  const fetchLocation = () => {
-    if (!navigator.geolocation) {
+const fetchLocation = () => {
+  if (!("geolocation" in navigator)) {
+    setLocStatus("error");
+    console.error("Geolocation is not supported by this browser.");
+    return;
+  }
+
+  setLocStatus("loading");
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const locationData = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      };
+
+      console.log("Location received:", locationData);
+
+      setLoc(locationData);
+      setLocStatus("ok");
+
+      localStorage.setItem(
+        "aapda-saarthi-last-location",
+        JSON.stringify({
+          ...locationData,
+          timestamp: Date.now(),
+        })
+      );
+    },
+
+    (error) => {
+      console.error(
+        "Location error:",
+        error.code,
+        error.message
+      );
+
+      // Try previously saved location.
+      const saved = localStorage.getItem(
+        "aapda-saarthi-last-location"
+      );
+
+      if (saved) {
+        try {
+          const previous = JSON.parse(saved);
+
+          if (
+            typeof previous.lat === "number" &&
+            typeof previous.lng === "number"
+          ) {
+            setLoc({
+              lat: previous.lat,
+              lng: previous.lng,
+              accuracy: previous.accuracy,
+            });
+
+            setLocStatus("ok");
+
+            console.log(
+              "Using previously saved location:",
+              previous
+            );
+
+            return;
+          }
+        } catch {
+          console.error(
+            "Saved location is invalid."
+          );
+        }
+      }
+
       setLocStatus("error");
-      return;
+    },
+
+    {
+      enableHighAccuracy: false,
+      timeout: 30000,
+      maximumAge: 300000,
     }
-    setLocStatus("loading");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLoc({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        });
-        setLocStatus("ok");
-      },
-      () => setLocStatus("error"),
-      { enableHighAccuracy: true, timeout: 12000 }
+  );
+};
+
+useEffect(() => {
+  const saved =
+    localStorage.getItem(
+      "aapda-saarthi-last-location"
     );
-  };
+
+  if (!saved) return;
+
+  try {
+    const previous = JSON.parse(saved);
+
+    if (
+      typeof previous.lat === "number" &&
+      typeof previous.lng === "number"
+    ) {
+      setLoc({
+        lat: previous.lat,
+        lng: previous.lng,
+        accuracy: previous.accuracy,
+      });
+
+      setLocStatus("ok");
+    }
+  } catch {
+    // Ignore invalid saved location.
+  }
+}, []);
 
   const useManualLocation = () => {
     setLoc({ lat: manualLat, lng: manualLng });
@@ -123,20 +247,128 @@ export function SosComposer() {
 
   const canSubmit = message.trim().length > 0 && locStatus === "ok";
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    const id = addSos({
-      citizenName: name.trim() || "Anonymous citizen",
-      message: message.trim(),
-      peopleCount,
-      location: loc ?? undefined,
-      media,
-    });
-    // The freshly added signal sits at the head of the store list.
-    const created = useSosStore.getState().sos.find((s) => s.id === id);
-    setRoutedTo(created?.nearestRescuerName ?? null);
-    setSentId(id);
-  };
+  const canReachServer = async (): Promise<boolean> => {
+  if (!navigator.onLine) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/risk/connectivity",
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+  const sendSOSViaSMS = (sosId: string) => {
+  let locationText = "Location unavailable";
+  let mapText = "";
+
+  if (loc) {
+    locationText =
+      `${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`;
+
+    mapText =
+      `https://maps.google.com/?q=${loc.lat},${loc.lng}`;
+  }
+
+  const smsBody =
+    `🚨 AAPDA SAARTHI SOS 🚨\n\n` +
+    `SOS ID: ${sosId}\n` +
+    `Name: ${name.trim() || "Anonymous citizen"}\n` +
+    `People with me: ${peopleCount}\n\n` +
+    `Emergency:\n${message.trim()}\n\n` +
+    `Location: ${locationText}\n` +
+    `${mapText ? `Map: ${mapText}\n\n` : "\n"}` +
+    `Please send emergency assistance immediately.`;
+
+  const smsUrl =
+    `sms:${EMERGENCY_SMS_NUMBER}` +
+    `?body=${encodeURIComponent(smsBody)}`;
+
+  window.location.href = smsUrl;
+};
+
+const handleSubmit = async () => {
+  if (!canSubmit) return;
+
+  /*
+   * FIRST:
+   * Add the SOS to the existing Zustand store.
+   *
+   * Your store already persists to localStorage,
+   * so this remains available even when offline.
+   */
+  const id = addSos({
+    citizenName:
+      name.trim() || "Anonymous citizen",
+
+    message: message.trim(),
+
+    peopleCount,
+
+    location:
+      loc ?? undefined,
+
+    media,
+  });
+
+  /*
+   * ------------------------------------------------
+   * THIS IS THE IMPORTANT "AFTER addSos()" SECTION.
+   * ------------------------------------------------
+   */
+
+  const created =
+    useSosStore.getState().sos.find(
+      (s) => s.id === id
+    );
+
+  setRoutedTo(
+    created?.nearestRescuerName ?? null
+  );
+
+  /*
+   * OFFLINE:
+   *
+   * The SOS is already safely stored locally.
+   * Now prepare the cellular SMS.
+   */
+  const serverIsReachable =
+  await canReachServer();
+
+if (!serverIsReachable) {
+  /*
+   * INTERNET/SERVER UNAVAILABLE
+   *
+   * SOS has already been saved locally
+   * by addSos().
+   *
+   * Now use cellular SMS.
+   */
+  setDeliveryMode("sms");
+  setSentId(id);
+
+  sendSOSViaSMS(id);
+
+  return;
+}
+
+/*
+ * SERVER IS REACHABLE
+ *
+ * SosSync will upload the SOS to Supabase.
+ */
+setDeliveryMode("online");
+setSentId(id);
+};
 
   useEffect(() => {
     return () => {
@@ -149,7 +381,11 @@ export function SosComposer() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-safe" /> SOS transmitted
+            <CheckCircle2 className="h-3.5 w-3.5 text-safe" />
+
+            {deliveryMode === "sms"
+              ? "SOS prepared for SMS"
+              : "SOS transmitted"}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
@@ -157,20 +393,39 @@ export function SosComposer() {
             <Siren className="h-7 w-7" />
           </div>
           <p className="text-sm text-foreground">
-            Your distress signal <span className="font-mono text-cyan">{sentId}</span> is now live.
-          </p>
+            Your distress signal{" "}
+            <span className="font-mono text-cyan">
+            {sentId}
+            </span>{" "}
+            {deliveryMode === "sms"
+              ? "has been saved locally and the SMS composer has been opened."
+              : "is now live."}
+            </p>
           <p className="text-[12px] leading-relaxed text-muted">
-            {routedTo ? (
+            {deliveryMode === "sms" ? (
               <>
-                Response has been routed to the nearest available team —{" "}
-                <span className="font-semibold text-foreground">{routedTo}</span> has been
-                alerted and can take control of your situation. A confirmation SMS in your local
-                language is on its way.
+                Your SOS has been saved on this device and an
+                emergency SMS has been prepared. Press{" "}
+                <span className="font-semibold text-foreground">
+                  Send
+                </span>{" "}
+                in your phone&apos;s messaging app to transmit
+                it through the cellular network.
+              </>
+            ) : routedTo ? (
+              <>
+                Response has been routed to the nearest available
+                team —{" "}
+                <span className="font-semibold text-foreground">
+                  {routedTo}
+                </span>{" "}
+                has been alerted and can take control of your
+                situation.
               </>
             ) : (
               <>
-                Rescue teams have been notified and can take control of your situation. A
-                confirmation SMS in your local language is on its way.
+                Rescue teams have been notified and can take
+                control of your situation.
               </>
             )}
           </p>
@@ -189,7 +444,11 @@ export function SosComposer() {
           <Siren className="h-3.5 w-3.5 text-danger" /> Citizen SOS
         </CardTitle>
         <span className="flex items-center gap-1.5 font-mono text-[10px] text-muted">
-          <Radio className="h-3 w-3" /> routed to nearest rescuer
+          <Radio className="h-3 w-3" />
+
+          {isOnline
+          ? "routed to nearest rescuer"
+          : "offline · cellular SMS available"}
         </span>
       </CardHeader>
 
@@ -357,11 +616,19 @@ export function SosComposer() {
         >
           <Send className="h-4 w-4" /> Send SOS
         </Button>
-        {!canSubmit && (
+        {!canSubmit ? (
           <p className="text-center font-mono text-[10px] text-muted">
             add a message + fetch location to transmit
           </p>
-        )}
+          ) : !isOnline ? (
+          <p className="text-center font-mono text-[10px] text-danger">
+            internet unavailable · SOS will use cellular SMS
+          </p>
+) : (
+  <p className="text-center font-mono text-[10px] text-muted">
+    SOS will be routed to the nearest available rescuer
+  </p>
+)}
       </CardContent>
     </Card>
   );

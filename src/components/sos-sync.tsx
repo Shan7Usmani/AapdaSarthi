@@ -49,7 +49,14 @@ export function SosSync() {
     let debounce: ReturnType<typeof setTimeout> | null = null;
 
     const writeAll = () => {
-      const { sos, requests, rescuers } = store.getState();
+      // Do not try to sync while the device is offline.
+      if (!navigator.onLine) {
+        return;
+      }
+
+      const { sos, requests, rescuers } =
+        store.getState();
+
       const db = getSupabase();
       if (!db) return;
       const work = (async () => {
@@ -69,6 +76,18 @@ export function SosSync() {
       });
     };
 
+    const handleOnline = () => {
+      // Give the connection a moment to become usable.
+      setTimeout(() => {
+        writeAll();
+      }, 1000);
+    };
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
     const unsub = store.subscribe((state, prev) => {
       if (
         state.sos === prev.sos &&
@@ -81,7 +100,15 @@ export function SosSync() {
     });
 
     return () => {
-      if (debounce) clearTimeout(debounce);
+      if (debounce) {
+        clearTimeout(debounce);
+      }
+
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
       unsub();
     };
   }, []);
