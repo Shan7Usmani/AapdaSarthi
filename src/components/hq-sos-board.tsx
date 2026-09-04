@@ -144,14 +144,15 @@ function RequestCard({
 
 export function HqSosBoard() {
   const { sos, requests, rescuers, fulfillRequest, resetDemo } = useSosStore();
-  const latest = [...sos].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 6);
-  const openCount = sos.filter((s) => s.status === "open").length;
-  const claimedCount = sos.filter((s) => s.status === "claimed").length;
-  const pendingRequests = requests.filter((r) => r.status === "pending").length;
+  const validSos = sos.filter((s) => s && typeof s.timestamp === "string");
+  const latest = [...validSos].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 6);
+  const openCount = validSos.filter((s) => s.status === "open").length;
+  const claimedCount = validSos.filter((s) => s.status === "claimed").length;
+  const pendingRequests = requests.filter((r) => r && r.status === "pending").length;
   const teamsOnline = rescuers.filter((r) => r.online).length;
-  const requestsSorted = [...requests].sort((a, b) =>
-    b.timestamp.localeCompare(a.timestamp)
-  );
+  const requestsSorted = [...requests]
+    .filter((r) => r && typeof r.timestamp === "string")
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
   return (
     <Card className="h-full">

@@ -32,7 +32,13 @@ async function readAll<T extends { id: string }>(table: string): Promise<T[]> {
   if (!db) return [];
   const { data, error } = await db.from(table).select("data");
   if (error) return [];
-  return (data ?? []).map((r) => r.data as T);
+  // Drop malformed rows (e.g. an old probe row that has no timestamp/lastSeen)
+  // so junk data can never enter the store and crash a sorted view.
+  const stampKey = table === TABLES.rescuers ? "lastSeen" : "timestamp";
+  const rows = (data ?? [])
+    .map((r) => r.data as T)
+    .filter((r) => r && typeof (r as unknown as Record<string, unknown>)[stampKey] === "string");
+  return rows;
 }
 
 export function SosSync() {
@@ -170,7 +176,7 @@ export function SosSync() {
         { event: "*", schema: "public", table: TABLES.sos },
         (payload) => {
           const row = payload.new as { id: string; data: SosItem } | null;
-          if (!row) return;
+          if (!row || !row.data || typeof row.data.timestamp !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.sos.find((s) => s.id === row.id);
           // Skip our own echoed write: when this device upserts, Realtime
@@ -187,7 +193,7 @@ export function SosSync() {
         { event: "*", schema: "public", table: TABLES.requests },
         (payload) => {
           const row = payload.new as { id: string; data: ResourceRequest } | null;
-          if (!row) return;
+          if (!row || !row.data || typeof row.data.timestamp !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.requests.find((r) => r.id === row.id);
           if (existing && String(existing.timestamp) === String(row.data.timestamp)) return;
@@ -200,7 +206,7 @@ export function SosSync() {
         { event: "*", schema: "public", table: TABLES.rescuers },
         (payload) => {
           const row = payload.new as { id: string; data: Rescuer } | null;
-          if (!row) return;
+          if (!row || !row.data || typeof row.data.lastSeen !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.rescuers.find((r) => r.id === row.id);
           if (existing && String(existing.lastSeen) === String(row.data.lastSeen)) return;
