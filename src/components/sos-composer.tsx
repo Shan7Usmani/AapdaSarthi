@@ -205,8 +205,14 @@ const fetchLocation = () => {
     },
 
     {
-      enableHighAccuracy: false,
-      timeout: 30000,
+      // Prefer the GPS hardware over network-based triangulation: true GPS
+      // satellites keep working with NO internet at all, which is exactly the
+      // disaster scenario, whereas WiFi/cell triangulation silently needs a
+      // connection and fails offline.
+      enableHighAccuracy: true,
+      // Fail fast when offline so we drop to the last-saved location (below)
+      // instead of making the user stare at a spinner for 30s.
+      timeout: 8000,
       maximumAge: 300000,
     }
   );
