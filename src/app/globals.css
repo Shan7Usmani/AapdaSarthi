@@ -96,6 +96,61 @@ body {
   animation: map-pulse 1.4s ease-out infinite;
 }
 
+/* ---------- Google-Maps-style "your location" dot ---------- */
+.gmap-you {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gmap-you::before,
+.gmap-you::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(0, 122, 255, 0.28);
+  inset: 0;
+  animation: gmap-you-pulse 2s ease-out infinite;
+}
+.gmap-you::after {
+  animation-delay: 1s;
+}
+.gmap-you-core {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #1a73e8;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+@keyframes gmap-you-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+.gmap-you-label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: #0b57d0;
+  background: #ffffff;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+
 @keyframes blip {
   0%, 100% {
     opacity: 1;

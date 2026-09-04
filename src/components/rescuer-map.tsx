@@ -62,6 +62,31 @@ export function RescuerMap() {
   const [claimedId, setClaimedId] = useState<string | null>(null);
   const [locError, setLocError] = useState(false);
 
+  // Load the Leaflet runtime (needed for L.divIcon) lazily, matching the other
+  // map layers. This replaces Leaflet's default placeholder icon with a
+  // Google-Maps-style blue "your location" dot for the rescuer.
+  const [L, setL] = useState<typeof import("leaflet") | null>(null);
+  useEffect(() => {
+    let alive = true;
+    import("leaflet").then((mod) => {
+      if (alive) setL(mod);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Google-Maps-style blue location pin (replaces the default Leaflet icon).
+  const youIcon = useMemo(() => {
+    if (!L) return undefined;
+    return L.divIcon({
+      className: "",
+      html: `<div class="gmap-you"><span class="gmap-you-core"></span></div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+    });
+  }, [L]);
+
   const locate = useCallback(() => {
     setLocStatus("loading");
     setLocError(false);
@@ -184,12 +209,12 @@ export function RescuerMap() {
               subdomains="abcd"
             />
 
-            {/* rescuer position */}
+            {/* rescuer position — Google-Maps-style blue location dot */}
             {pos && (
-              <Marker position={[pos.lat, pos.lng]}>
-                <Tooltip direction="top" offset={[0, -10]} opacity={1}>
-                  <span className="font-mono text-[10px] text-orange-600">
-                    YOU · {rescuerName.trim() || "Rescuer"}
+              <Marker position={[pos.lat, pos.lng]} icon={youIcon}>
+                <Tooltip direction="top" offset={[0, -16]} opacity={1}>
+                  <span className="gmap-you-label">
+                    {rescuerName.trim() || "You"}
                   </span>
                 </Tooltip>
               </Marker>
