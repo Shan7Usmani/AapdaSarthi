@@ -508,6 +508,56 @@ export function LiveMap() {
         </div>
       </div>
 
+      {/* left rail: at-risk district names (auto-updates with risk feed) */}
+      {(() => {
+        const zoneDistricts =
+          riskPoints?.filter(
+            (d) => d.severity === "CRITICAL" || d.severity === "HIGH"
+          ) ?? [];
+        return (
+          <div className="absolute top-3 left-[13.5rem] z-[1000] flex max-h-[70%] w-[230px] flex-col rounded border border-border-strong bg-white/92 shadow-sm backdrop-blur">
+            <div className="flex items-center justify-between border-b border-border-strong px-3 py-2">
+              <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
+                At-Risk Districts
+              </div>
+              <div className="font-mono text-[8px] uppercase text-cyan">auto ✓</div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {zoneDistricts.length === 0 ? (
+                <div className="px-3 py-3 font-mono text-[10px] text-muted">
+                  No districts at HIGH or CRITICAL risk right now.
+                </div>
+              ) : (
+                <ul className="divide-y divide-border-strong/40">
+                  {zoneDistricts.map((d) => (
+                    <li
+                      key={d.name}
+                      className="flex items-center gap-2 px-3 py-1.5"
+                    >
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: riskColor[d.severity as RiskBand] ?? riskColor.LOW }}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[11px] font-medium text-foreground">
+                          {d.name}
+                        </span>
+                        <span className="block font-mono text-[9px] text-muted">
+                          {d.state}
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-mono text-[10px] font-bold" style={{ color: riskColor[d.severity as RiskBand] }}>
+                        {d.riskScore}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* top-right: at-risk tally from live engine */}
       <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded border border-border-strong bg-white/90 px-3 py-2 text-right shadow-sm backdrop-blur">
         <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
