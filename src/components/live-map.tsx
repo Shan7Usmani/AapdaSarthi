@@ -512,8 +512,12 @@ export function LiveMap() {
       {(() => {
         const zoneDistricts =
           riskPoints?.filter(
-            (d) => d.severity === "CRITICAL" || d.severity === "HIGH"
+            (d) =>
+              d.severity === "CRITICAL" ||
+              d.severity === "HIGH" ||
+              d.severity === "MODERATE"
           ) ?? [];
+        const display = zoneDistricts.slice(0, 12);
         return (
           <div className="absolute top-3 left-[13.5rem] z-[1000] flex max-h-[70%] w-[230px] flex-col rounded border border-border-strong bg-white/92 shadow-sm backdrop-blur">
             <div className="flex items-center justify-between border-b border-border-strong px-3 py-2">
@@ -523,13 +527,13 @@ export function LiveMap() {
               <div className="font-mono text-[8px] uppercase text-cyan">auto ✓</div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {zoneDistricts.length === 0 ? (
+              {display.length === 0 ? (
                 <div className="px-3 py-3 font-mono text-[10px] text-muted">
-                  No districts at HIGH or CRITICAL risk right now.
+                  All districts safe right now.
                 </div>
               ) : (
                 <ul className="divide-y divide-border-strong/40">
-                  {zoneDistricts.map((d) => (
+                  {display.map((d) => (
                     <li
                       key={d.name}
                       className="flex items-center gap-2 px-3 py-1.5"
