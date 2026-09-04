@@ -2,9 +2,10 @@
 
 import { BrainCircuit, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useDashboard } from "@/store/dashboard-store";
+import { useLiveStats } from "@/lib/live-stats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { sortBySeverity, cn, formatNum } from "@/lib/utils";
+import { severityOrder, cn, formatNum } from "@/lib/utils";
 
 const severityColor: Record<string, string> = {
   CRITICAL: "#dc2626",
@@ -15,9 +16,25 @@ const severityColor: Record<string, string> = {
 
 export function RiskPanel() {
   const { scenario, selectedDistrict, setSelectedDistrict } = useDashboard();
-  const sorted = sortBySeverity(scenario.districts);
-  const critical = scenario.districts.filter((d) => d.severity === "CRITICAL").length;
-  const high = scenario.districts.filter((d) => d.severity === "HIGH").length;
+  const live = useLiveStats();
+
+  // Live mode: risk zones derived from actual open SOS signals. Fall back to
+  // the demo scenario districts only when there are no live signals at all.
+  const liveMode = live.openCount > 0;
+  const zones = liveMode
+    ? live.clusters.map((c) => ({
+        name: c.label,
+        severity: c.risk as "CRITICAL" | "HIGH" | "MODERATE" | "LOW",
+        riskScore: Math.min(99, c.count * 15 + c.people),
+        affected: c.people || c.count,
+        trend: "rising" as const,
+        live: true,
+      }))
+    : scenario.districts.map((d) => ({ ...d, live: false }));
+
+  const sorted = [...zones].sort((a, b) => severityOrder[b.severity] - severityOrder[a.severity]);
+  const critical = zones.filter((d) => d.severity === "CRITICAL").length;
+  const high = zones.filter((d) => d.severity === "HIGH").length;
 
   return (
     <Card>
@@ -31,12 +48,27 @@ export function RiskPanel() {
       </CardHeader>
       <CardContent className="space-y-1.5 p-2.5">
         <div className="rounded border border-cyan/25 bg-cyan/5 px-3 py-2 font-mono text-[11px] leading-relaxed text-cyan/90">
-          <span className="text-muted">» AI verdict:</span> {critical} district
-          {critical > 1 ? "s" : ""} at{" "}
-          <span className="text-danger font-semibold">
-            {critical > 0 ? "CRITICAL" : "HIGH"}
-          </span>{" "}
-          risk in next 48h based on rainfall + river-level telemetry.
+          <span className="text-muted">» AI verdict:</span>{" "}
+          {liveMode ? (
+            <>
+              {live.openCount} live open signal
+              {live.openCount === 1 ? "" : "s"} across {live.clusters.length} risk zone
+              {live.clusters.length === 1 ? "" : "s"} ·{" "}
+              <span className="text-danger font-semibold">
+                {critical > 0 ? "CRITICAL" : "HIGH"}
+              </span>{" "}
+              priority zones now.
+            </>
+          ) : (
+            <>
+              {critical} district
+              {critical > 1 ? "s" : ""} at{" "}
+              <span className="text-danger font-semibold">
+                {critical > 0 ? "CRITICAL" : "HIGH"}
+              </span>{" "}
+              risk in next 48h based on rainfall + river-level telemetry.
+            </>
+          )}
         </div>
 
         <div className="space-y-1">

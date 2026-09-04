@@ -12,18 +12,23 @@ import {
   Bar,
 } from "recharts";
 import { useDashboard } from "@/store/dashboard-store";
+import { useLiveStats } from "@/lib/live-stats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatNum } from "@/lib/utils";
 
 export function RiskTrendChart() {
   const { scenario } = useDashboard();
-  const data = scenario.timeline;
+  const live = useLiveStats();
+  const liveMode = live.openCount > 0 || live.daily.some((d) => d.count > 0);
+  const data = (liveMode ? live.daily : scenario.timeline) as unknown as Record<string, number | string>[];
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>District Risk Index Trend</CardTitle>
-        <span className="font-mono text-[10px] text-muted">avg · last 6 days</span>
+        <CardTitle>{liveMode ? "Live SOS Trend" : "District Risk Index Trend"}</CardTitle>
+        <span className="font-mono text-[10px] text-muted">
+          {liveMode ? "signals received · last 7 days" : "avg · last 6 days"}
+        </span>
       </CardHeader>
       <CardContent className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -40,7 +45,8 @@ export function RiskTrendChart() {
               tick={{ fill: "#64748b", fontSize: 10 }}
               axisLine={false}
               tickLine={false}
-              domain={[0, 100]}
+              allowDecimals={false}
+              domain={[0, (dataMax: number) => Math.max(4, Math.ceil(dataMax * 1.2))]}
             />
             <RTooltip
               contentStyle={{
@@ -50,11 +56,15 @@ export function RiskTrendChart() {
                 fontSize: 11,
               }}
               labelStyle={{ color: "#0f172a" }}
-              formatter={(v) => [`Risk ${v ?? 0}`, "Index"]}
+              formatter={(v) =>
+                liveMode
+                  ? [`${v ?? 0}`, "Signals"]
+                  : [`Risk ${v ?? 0}`, "Index"]
+              }
             />
             <Area
               type="monotone"
-              dataKey="riskIndex"
+              dataKey={liveMode ? "count" : "riskIndex"}
               stroke="#0284c7"
               strokeWidth={2}
               fill="url(#riskGrad)"
@@ -68,16 +78,23 @@ export function RiskTrendChart() {
 
 export function DistrictImpactChart() {
   const { scenario } = useDashboard();
-  const data = [...scenario.districts]
-    .sort((a, b) => b.affected - a.affected)
-    .slice(0, 8)
-    .map((d) => ({ name: d.name, affected: d.affected }));
+  const live = useLiveStats();
+  const liveMode = live.openCount > 0;
+  const data = liveMode
+    ? [...live.clusters]
+        .sort((a, b) => b.people - a.people || b.count - a.count)
+        .slice(0, 8)
+        .map((c) => ({ name: c.label, affected: Math.max(c.people, c.count) }))
+    : [...scenario.districts]
+        .sort((a, b) => b.affected - a.affected)
+        .slice(0, 8)
+        .map((d) => ({ name: d.name, affected: d.affected }));
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Top Displaced Districts</CardTitle>
-        <span className="font-mono text-[10px] text-muted">population</span>
+        <CardTitle>{liveMode ? "At-Risk Zones by People" : "Top Displaced Districts"}</CardTitle>
+        <span className="font-mono text-[10px] text-muted">{liveMode ? "people in open signals" : "population"}</span>
       </CardHeader>
       <CardContent className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">

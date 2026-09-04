@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { useMapEvents } from "react-leaflet";
 import { CloudRain, WifiOff, RefreshCw, ZoomIn, Route, Navigation } from "lucide-react";
 import { useDashboard } from "@/store/dashboard-store";
+import { useLiveStats } from "@/lib/live-stats";
 import { ASSAM_DISTRICTS } from "@/data/assam-districts";
 import { KERALA_DISTRICTS } from "@/data/kerala-districts";
 import type { DistrictShape } from "@/data/assam-districts";
@@ -78,7 +79,10 @@ function getDistrictRisk(name: string, districts: DistrictRisk[]): DistrictRisk 
 }
 
 function polygonsFor(state: string): DistrictShape[] {
-  return state.toLowerCase() === "kerala" ? KERALA_DISTRICTS : ASSAM_DISTRICTS;
+  const s = state.toLowerCase();
+  if (s === "kerala") return KERALA_DISTRICTS;
+  if (s === "assam") return ASSAM_DISTRICTS;
+  return [];
 }
 
 function ZoomWatcher({ onZoom }: { onZoom: (z: number) => void }) {
@@ -407,6 +411,8 @@ export function LiveMap() {
   const [routing, setRouting] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
 
+  const live = useLiveStats();
+
   const load = useCallback(() => {
     setError(false);
     setSource("loading");
@@ -620,6 +626,24 @@ export function LiveMap() {
           ));
         })}
 
+        {/* live SOS incident markers — real-time field signals */}
+        {live.openSignals.map((s) =>
+          s.location ? (
+            <CircleMarker
+              key={s.id}
+              center={[s.location.lat, s.location.lng]}
+              radius={7}
+              pathOptions={{ color: "#ef4444", weight: 2, fillColor: "#dc2626", fillOpacity: 0.85 }}
+            >
+              <Tooltip direction="top" offset={[0, -6]} opacity={1}>
+                <span className="font-mono text-[10px]">
+                  {s.citizenName || "Signal"} · {s.peopleCount || 1} people
+                </span>
+              </Tooltip>
+            </CircleMarker>
+          ) : null
+        )}
+
         <DistrictLabels show={detailed} />
         <StateIndicator show={!detailed} />
 
@@ -670,6 +694,10 @@ export function LiveMap() {
         <div className="mt-1 font-mono text-[10px] text-muted">
           <span className="text-danger">{critical} CRITICAL</span> ·{" "}
           <span className="text-warn">{high} HIGH</span>
+        </div>
+        <div className="mt-1 font-mono text-[10px] text-danger">
+          <span className="text-muted">LIVE SOS:</span> {live.openCount} open ·{" "}
+          {live.claimedCount} claimed
         </div>
       </div>
 
