@@ -23,6 +23,7 @@ const Polyline = dynamic(() => import("react-leaflet").then((m) => m.Polyline), 
 const CircleMarker = dynamic(() => import("react-leaflet").then((m) => m.CircleMarker), {
   ssr: false,
 });
+const Circle = dynamic(() => import("react-leaflet").then((m) => m.Circle), { ssr: false });
 const Tooltip = dynamic(() => import("react-leaflet").then((m) => m.Tooltip), { ssr: false });
 const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ssr: false });
 const ZoomControl = dynamic(() => import("react-leaflet").then((m) => m.ZoomControl), {
@@ -100,24 +101,41 @@ interface RiskApiResp {
   summary?: { summary: string; actions: string[]; riskZones: string[] };
 }
 
+/** Approximate flood-affected footprint (metres) per severity band. */
+const ZONE_RADIUS: Record<RiskBand, number> = {
+  LOW: 0,
+  MODERATE: 45_000,
+  HIGH: 80_000,
+  CRITICAL: 120_000,
+};
+
+const ZONE_FILL: Record<RiskBand, number> = {
+  LOW: 0,
+  MODERATE: 0.18,
+  HIGH: 0.26,
+  CRITICAL: 0.34,
+};
+
 function LiveRiskLayer({ points }: { points: DistrictRiskOutput[] | null }) {
   if (!points) return null;
   return (
     <>
       {points.map((d) => {
-        const radius = d.severity === "CRITICAL" ? 9 : d.severity === "HIGH" ? 7 : d.severity === "MODERATE" ? 5 : 3.4;
-        const color = riskColor[d.severity as RiskBand] ?? riskColor.LOW;
+        const band = (d.severity as RiskBand) ?? "LOW";
+        const radius = ZONE_RADIUS[band] ?? 0;
+        if (!radius || d.riskScore <= 0) return null;
+        const color = riskColor[band];
         return (
-          <CircleMarker
+          <Circle
             key={`riski-${d.name}`}
             center={[d.lat, d.lon]}
-            radius={d.severity !== "LOW" && d.riskScore > 0 ? radius : 0}
+            radius={radius}
             pathOptions={{
               color,
-              weight: 1.2,
+              weight: 1,
               fillColor: color,
-              fillOpacity: d.severity === "CRITICAL" ? 0.85 : d.severity === "LOW" ? 0.45 : 0.72,
-              opacity: 0.9,
+              fillOpacity: ZONE_FILL[band] ?? 0.2,
+              opacity: 0.75,
             }}
           >
             <Tooltip sticky direction="top" className="district-tooltip" opacity={1}>
@@ -129,7 +147,7 @@ function LiveRiskLayer({ points }: { points: DistrictRiskOutput[] | null }) {
                 {d.precipitation.toFixed(1)} mm/hr · {Math.round(d.precipitation24h)} mm/24h
               </div>
             </Tooltip>
-          </CircleMarker>
+          </Circle>
         );
       })}
     </>
@@ -416,18 +434,24 @@ export function LiveMap() {
         {/* all-India live risk layer (always) */}
         <LiveRiskLayer points={riskPoints} />
 
-        {/* live SOS incident markers — real-time field signals */}
+        {/* live SOS incident markers — real-time field signals (distinct from flood zones) */}
         {live.openSignals.map((s) =>
           s.location ? (
             <CircleMarker
               key={s.id}
               center={[s.location.lat, s.location.lng]}
-              radius={7}
-              pathOptions={{ color: "#ef4444", weight: 2, fillColor: "#dc2626", fillOpacity: 0.85 }}
+              radius={8}
+              pathOptions={{ color: "#fff", weight: 2, fillColor: "#b91c1c", fillOpacity: 0.95 }}
             >
-              <Tooltip direction="top" offset={[0, -6]} opacity={1}>
+              <Tooltip permanent direction="top" offset={[0, -10]} opacity={1} className="sos-tag">
+                <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-amber-50">
+                  SOS · {s.citizenName || "Signal"}
+                </span>
+              </Tooltip>
+              <Tooltip sticky direction="bottom" offset={[0, 12]} opacity={1}>
                 <span className="font-mono text-[10px]">
-                  {s.citizenName || "Signal"} · {s.peopleCount || 1} people
+                  {s.citizenName || "Signal"} · {s.peopleCount || 1} people ·{" "}
+                  {s.location.lat.toFixed(3)},{s.location.lng.toFixed(3)}
                 </span>
               </Tooltip>
             </CircleMarker>
@@ -519,7 +543,19 @@ export function LiveMap() {
           <ZoomIn className="h-3 w-3" />
           {detailed ? "district detail · routes live" : "zoom in to analyze districts"}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+            <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.CRITICAL }} /> Critical zone
+          </div>
+          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+            <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.HIGH }} /> High zone
+          </div>
+          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+            <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.MODERATE }} /> Moderate zone
+          </div>
+          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+            <span className="h-2 w-2 rounded-full border-2 border-white" style={{ background: "#b91c1c" }} /> SOS signal
+          </div>
           {(Object.keys(BAND_META) as Array<keyof typeof BAND_META>).map((b) => (
             <div
               key={b}
@@ -529,19 +565,6 @@ export function LiveMap() {
               {BAND_META[b].label}
             </div>
           ))}
-          {detailed && (
-            <>
-              <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-                <span className="h-2 w-2 rounded-sm" style={{ background: "#dc2626" }} /> Critical
-              </div>
-              <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-                <span className="h-2 w-2 rounded-sm" style={{ background: "#ea580c" }} /> High
-              </div>
-              <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-                <span className="h-2 w-2 rounded-sm" style={{ background: "#16a34a" }} /> Safe
-              </div>
-            </>
-          )}
         </div>
       </div>
 
