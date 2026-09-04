@@ -13,6 +13,10 @@ import {
   Users,
   Radio,
   Globe2,
+  Rocket,
+  Satellite,
+  Bot,
+  Network,
 } from "lucide-react";
 import { getRainfall, BAND_META, rainfallBand, type RainfallPoint } from "@/lib/rainfall";
 import { useSosStore } from "@/store/sos-store";
@@ -51,6 +55,54 @@ const ROLES = [
     chip: "bg-sky-50 text-sky-600 border-sky-200",
     hover: "hover:border-sky-300",
     cta: "Open command center",
+  },
+];
+
+const FUTURE_SCOPE = [
+  {
+    phase: "01",
+    icon: Network,
+    title: "Resilient Reach · Offline-first",
+    desc: "Service-worker PWA caching, local SOS queues that auto-sync on reconnection, and an SMS fallback so a citizen with no data can still signal for help.",
+    status: "Live today",
+    tag: "bg-emerald-50 text-emerald-600 border-emerald-200",
+    chip: "bg-emerald-50 text-emerald-600",
+  },
+  {
+    phase: "02",
+    icon: Bot,
+    title: "Autonomous Response · AI Dispatch",
+    desc: "An AI dispatcher that triages SOS, auto-suggests the nearest available team and drafts multilingual alerts in real time from a single intake form.",
+    status: "Next up",
+    tag: "bg-sky-50 text-sky-600 border-sky-200",
+    chip: "bg-sky-50 text-sky-600",
+  },
+  {
+    phase: "03",
+    icon: Satellite,
+    title: "Mesh & Satellite · No network at all",
+    desc: "Device-to-device mesh messaging and satellite backhaul for telemetry so coordination survives when cell towers and internet go down.",
+    status: "On roadmap",
+    tag: "bg-slate-50 text-slate-500 border-slate-200",
+    chip: "bg-slate-100 text-slate-500",
+  },
+  {
+    phase: "04",
+    icon: Activity,
+    title: "Smarter HQ · Forecast Fusion",
+    desc: "Blend live rainfall, river-gauge and satellite flood models into a predictive risk score that tells HQ where danger is forming before it peaks.",
+    status: "On roadmap",
+    tag: "bg-slate-50 text-slate-500 border-slate-200",
+    chip: "bg-slate-100 text-slate-500",
+  },
+  {
+    phase: "05",
+    icon: Globe2,
+    title: "Scale to Nation · Open platform",
+    desc: "A standardized API and pluggable SOS/resource integrations so any state disaster cell, NGO or volunteer network can join the same response loop.",
+    status: "On roadmap",
+    tag: "bg-slate-50 text-slate-500 border-slate-200",
+    chip: "bg-slate-100 text-slate-500",
   },
 ];
 
@@ -211,6 +263,49 @@ export default function Landing() {
           </span>
         </div>
       </main>
+
+      <section className="relative z-10 w-full border-t border-slate-200 bg-slate-50/60 px-5 py-14 sm:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan">
+            <Rocket className="h-4 w-4" />
+            Future scope &amp; roadmap
+          </div>
+          <h2 className="mb-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            From a working prototype to a national response loop
+          </h2>
+          <p className="mb-8 max-w-2xl text-[14px] leading-relaxed text-slate-500">
+            Aapda Saarthi ships as an offline-first platform today. Here is the
+            path from that foundation to a system that keeps coordinating even
+            when the network — and the forecast — fail together.
+          </p>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FUTURE_SCOPE.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.phase}
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className={cn("grid h-10 w-10 place-items-center rounded-xl border", f.chip)}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", f.tag)}>
+                      {f.status}
+                    </span>
+                  </div>
+                  <div className="text-[18px] font-bold leading-snug text-slate-900">{f.title}</div>
+                  <p className="text-[13px] leading-relaxed text-slate-500">{f.desc}</p>
+                  <div className="mt-auto font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+                    Phase {f.phase}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       <footer className="border-t border-slate-200 bg-white/70 px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
         AAPDA SAARTHI · AI Disaster Response Intelligence Platform · Decode SIH 2026 · Bharat Shakti PS3

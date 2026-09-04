@@ -17,6 +17,7 @@ import {
   Radio,
 } from "lucide-react";
 import { useSosStore, type MediaAttachment } from "@/store/sos-store";
+import { useOnline, getEffectiveOnline } from "@/store/connectivity";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,25 +26,45 @@ const EMERGENCY_SMS_NUMBER =
   process.env.NEXT_PUBLIC_EMERGENCY_SMS_NUMBER ||
   "+91XXXXXXXXXX";
 
+function readSavedLocation(): { lat: number; lng: number; accuracy?: number } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem("aapda-saarthi-last-location");
+    if (!saved) return null;
+    const previous = JSON.parse(saved);
+    if (typeof previous.lat === "number" && typeof previous.lng === "number") {
+      return {
+        lat: previous.lat,
+        lng: previous.lng,
+        accuracy: previous.accuracy,
+      };
+    }
+  } catch {
+    /* ignore invalid saved location */
+  }
+  return null;
+}
+
 export function SosComposer() {
   const addSos = useSosStore((s) => s.addSos);
+  const isOnline = useOnline();
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [peopleCount, setPeopleCount] = useState(1);
-  const [loc, setLoc] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
-  const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [loc, setLoc] = useState<{ lat: number; lng: number; accuracy?: number } | null>(
+    readSavedLocation
+  );
+  const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">(() =>
+    readSavedLocation() ? "ok" : "idle"
+  );
   const [manualLat, setManualLat] = useState<number>(26.1);
   const [manualLng, setManualLng] = useState<number>(90.6);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const [sentId, setSentId] = useState<string | null>(null);
   const [routedTo, setRoutedTo] = useState<string | null>(null);
- 
+
   const [deliveryMode, setDeliveryMode] =
     useState<"online" | "sms" | null>(null);
-
-  // PWA network status
-  const [isOnline, setIsOnline] = useState(true);
-
 
   // voice recording
   const [recording, setRecording] = useState(false);
@@ -52,27 +73,6 @@ export function SosComposer() {
   const chunksRef = useRef<Blob[]>([]);
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
-
-  // PWA network status
-  useEffect(() => {
-  setIsOnline(navigator.onLine);
-
-  const handleOnline = () => {
-    setIsOnline(true);
-  };
-
-  const handleOffline = () => {
-    setIsOnline(false);
-  };
-
-  window.addEventListener("online", handleOnline);
-  window.addEventListener("offline", handleOffline);
-
-  return () => {
-    window.removeEventListener("online", handleOnline);
-    window.removeEventListener("offline", handleOffline);
-  };
-  }, []);
 
   const addMedia = (m: MediaAttachment) => setMedia((prev) => [...prev, m]);
 
@@ -212,34 +212,6 @@ const fetchLocation = () => {
   );
 };
 
-useEffect(() => {
-  const saved =
-    localStorage.getItem(
-      "aapda-saarthi-last-location"
-    );
-
-  if (!saved) return;
-
-  try {
-    const previous = JSON.parse(saved);
-
-    if (
-      typeof previous.lat === "number" &&
-      typeof previous.lng === "number"
-    ) {
-      setLoc({
-        lat: previous.lat,
-        lng: previous.lng,
-        accuracy: previous.accuracy,
-      });
-
-      setLocStatus("ok");
-    }
-  } catch {
-    // Ignore invalid saved location.
-  }
-}, []);
-
   const useManualLocation = () => {
     setLoc({ lat: manualLat, lng: manualLng });
     setLocStatus("ok");
@@ -248,7 +220,7 @@ useEffect(() => {
   const canSubmit = message.trim().length > 0 && locStatus === "ok";
 
   const canReachServer = async (): Promise<boolean> => {
-  if (!navigator.onLine) {
+  if (!getEffectiveOnline()) {
     return false;
   }
 

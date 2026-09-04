@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SosSync } from "@/components/sos-sync";
 import { DemoSeed } from "@/components/demo-seed";
+import { ConnectivityBanner } from "@/components/connectivity-banner";
+import { SimulateOfflineToggle } from "@/components/simulate-offline-toggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,9 +43,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <ConnectivityBanner />
         <SosSync />
         <DemoSeed />
         {children}
+        <SimulateOfflineToggle />
       </body>
     </html>
   );
