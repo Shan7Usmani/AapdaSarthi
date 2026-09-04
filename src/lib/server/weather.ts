@@ -26,22 +26,23 @@ interface OpenMeteoRow {
     precipitation?: number;
     precipitation_probability?: number;
   };
-  hourly?: {
+  daily?: {
     time: string[];
-    precipitation?: number[];
+    precipitation_sum?: number[];
   };
 }
 
-function accumFromHourly(row: OpenMeteoRow | undefined): number {
-  const h = row?.hourly;
-  if (!h || !h.time || !h.precipitation) return 0;
-  // sum the last 24 hourly readings (last day of forecast)
-  const scale = Math.min(h.precipitation.length, 24);
-  let sum = 0;
-  for (let i = h.precipitation.length - scale; i < h.precipitation.length; i++) {
-    sum += h.precipitation[i] ?? 0;
-  }
-  return sum;
+/**
+ * Real accumulated precipitation over the past 24h.
+ * Uses Open-Meteo's daily aggregate (past_days=1) which returns the previous
+ * calendar day's total — NOT the hourly forecast, which would report rain
+ * that has not fallen yet.
+ */
+function past24hAccum(row: OpenMeteoRow | undefined): number {
+  const sums = row?.daily?.precipitation_sum;
+  if (!sums || sums.length === 0) return 0;
+  // [0] = yesterday (already passed), [1] = today (still in progress / forecast)
+  return Math.max(0, sums[0] ?? 0);
 }
 
 async function fetchBatch(
@@ -52,7 +53,7 @@ async function fetchBatch(
   const url =
     `${OPEN_METEO}?latitude=${lats}&longitude=${lons}` +
     `&current=precipitation,precipitation_probability` +
-    `&hourly=precipitation&past_days=0&forecast_days=1&timezone=Asia%2FKolkata`;
+    `&daily=precipitation_sum&past_days=1&forecast_days=1&timezone=Asia%2FKolkata`;
 
   const res = await fetch(url, {
     cache: "no-store",
@@ -72,7 +73,7 @@ async function fetchBatch(
       lon: d.lon,
       precipitation: Number(row?.current?.precipitation ?? 0),
       probability: Number(row?.current?.precipitation_probability ?? 0),
-      precipitation24h: accumFromHourly(row),
+      precipitation24h: past24hAccum(row),
       fetchedAt: row?.current?.time ?? now,
       source: "live" as const,
     };
