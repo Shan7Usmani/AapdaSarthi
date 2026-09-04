@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -46,9 +46,8 @@ function MediaChips({ sos }: { sos: SosItem }) {
 }
 
 export function RescuerPanel() {
-  const { sos, requests, rescuerName, setRescuerName, claimSos, resolveSos, addRequest, registerRescuer } =
+  const { sos, requests, rescuerName, setRescuerName, claimSos, resolveSos, addRequest, registerRescuer, rescuers } =
     useSosStore();
-  const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
 
@@ -59,18 +58,35 @@ export function RescuerPanel() {
   const [foodkits, setFoodkits] = useState(0);
   const [transports, setTransports] = useState(0);
 
+  // Single source of truth for the rescuer's live position: the shared store
+  // record (the map also writes + reads this). Deriving `myLoc` from the store
+  // keeps this panel's distance sort and the map's markers on the SAME
+  // coordinates — they can never show conflicting positions (the bug that made
+  // the page glitch back and forth).
+  const myRescuer = rescuers.find(
+    (r) => r.name.trim().toLowerCase() === rescuerName.trim().toLowerCase()
+  );
+  const myLoc = useMemo(
+    () => (myRescuer ? { lat: myRescuer.lat, lng: myRescuer.lng } : null),
+    [myRescuer]
+  );
+
   const fetchLocation = () => {
     if (!navigator.geolocation) {
+      setLocStatus("error");
+      return;
+    }
+    if (!rescuerName.trim()) {
       setLocStatus("error");
       return;
     }
     setLocStatus("loading");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setMyLoc(loc);
+        // Write straight to the shared store record. The panel and map read the
+        // same value, so there's no more two-compartment position bounce.
+        registerRescuer(rescuerName, pos.coords.latitude, pos.coords.longitude);
         setLocStatus("ok");
-        if (rescuerName.trim()) registerRescuer(rescuerName, loc.lat, loc.lng);
       },
       () => setLocStatus("error"),
       { enableHighAccuracy: true, timeout: 12000 }
@@ -91,13 +107,6 @@ export function RescuerPanel() {
         .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)),
     [sos, myLoc]
   );
-
-  // Keep this rescuer registered + online while on this console with a live
-  // location, so citizen SOS signals can be routed to the nearest team.
-  useEffect(() => {
-    if (!rescuerName.trim() || !myLoc) return;
-    registerRescuer(rescuerName, myLoc.lat, myLoc.lng);
-  }, [rescuerName, myLoc, registerRescuer]);
 
   const myRescues = useMemo(
     () =>
@@ -146,15 +155,17 @@ export function RescuerPanel() {
             className="flex-1 rounded-md border border-border-strong bg-slate-50 px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
           />
           <Button
-            variant={locStatus === "ok" ? "primary" : "outline"}
+            variant={myLoc ? "primary" : "outline"}
             size="md"
             onClick={fetchLocation}
             className="sm:flex-none"
           >
             <LocateFixed className={cn("h-3.5 w-3.5", locStatus === "loading" && "blip")} />
-            {locStatus === "ok"
-              ? `Located · ${myLoc!.lat.toFixed(4)}, ${myLoc!.lng.toFixed(4)}`
-              : "Set my location"}
+            {locStatus === "loading"
+              ? "Locating…"
+              : myLoc
+                ? `Located · ${myLoc.lat.toFixed(4)}, ${myLoc.lng.toFixed(4)}`
+                : "Set my location"}
           </Button>
         </CardContent>
       </Card>
@@ -292,8 +303,13 @@ export function RescuerPanel() {
                     size="md"
                     disabled={!rescuerName.trim()}
                     onClick={() => {
+                      // Take control of the signal and move to "My rescues".
+                      // NOTE: do NOT open the resource-request form here — that
+                      // jarred the UI by force-popping a form the instant a
+                      // rescuer took over. The form opens only when they tap
+                      // "Request resources".
                       claimSos(s.id);
-                      setFormFor(s.id);
+                      setFormFor(null);
                       setTab("rescues");
                     }}
                   >
