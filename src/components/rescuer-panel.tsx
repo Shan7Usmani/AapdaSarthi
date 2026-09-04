@@ -26,10 +26,11 @@ import { cn, timeAgo } from "@/lib/utils";
 import { haversineKm } from "@/lib/rainfall";
 
 function MediaChips({ sos }: { sos: SosItem }) {
-  if (sos.media.length === 0) return null;
+  const media = sos.media ?? [];
+  if (media.length === 0) return null;
   return (
     <div className="flex gap-1.5">
-      {sos.media.map((m, i) => {
+      {media.map((m, i) => {
         const Icon = m.kind === "photo" ? ImagePlus : m.kind === "video" ? Video : Mic;
         return (
           <span
