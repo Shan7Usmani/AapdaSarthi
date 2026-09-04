@@ -99,6 +99,7 @@ function RainfallMarkers({ points }: { points: RainfallPoint[] | null }) {
     <>
       {points.map((p) => {
         const band = rainfallBand(p.precipitation);
+        if (band === "low") return null;
         const meta = BAND_META[band];
         return (
           <CircleMarker
@@ -274,7 +275,7 @@ function LiveRiskLayer({ points }: { points: DistrictRiskOutput[] | null }) {
           <CircleMarker
             key={`riski-${d.name}`}
             center={[d.lat, d.lon]}
-            radius={d.riskScore > 0 ? radius : 0}
+            radius={d.severity !== "LOW" && d.riskScore > 0 ? radius : 0}
             pathOptions={{
               color,
               weight: 1.2,
