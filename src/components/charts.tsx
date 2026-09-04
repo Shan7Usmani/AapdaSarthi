@@ -11,23 +11,20 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { useDashboard } from "@/store/dashboard-store";
 import { useLiveStats } from "@/lib/live-stats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatNum } from "@/lib/utils";
 
 export function RiskTrendChart() {
-  const { scenario } = useDashboard();
   const live = useLiveStats();
-  const liveMode = live.openCount > 0 || live.daily.some((d) => d.count > 0);
-  const data = (liveMode ? live.daily : scenario.timeline) as unknown as Record<string, number | string>[];
+  const data = live.daily;
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>{liveMode ? "Live SOS Trend" : "District Risk Index Trend"}</CardTitle>
+        <CardTitle>Live SOS Trend</CardTitle>
         <span className="font-mono text-[10px] text-muted">
-          {liveMode ? "signals received · last 7 days" : "avg · last 6 days"}
+          signals received · last 7 days
         </span>
       </CardHeader>
       <CardContent className="h-[180px]">
@@ -56,15 +53,11 @@ export function RiskTrendChart() {
                 fontSize: 11,
               }}
               labelStyle={{ color: "#0f172a" }}
-              formatter={(v) =>
-                liveMode
-                  ? [`${v ?? 0}`, "Signals"]
-                  : [`Risk ${v ?? 0}`, "Index"]
-              }
+              formatter={(v) => [`${v ?? 0}`, "Signals"]}
             />
             <Area
               type="monotone"
-              dataKey={liveMode ? "count" : "riskIndex"}
+              dataKey="count"
               stroke="#0284c7"
               strokeWidth={2}
               fill="url(#riskGrad)"
@@ -77,24 +70,17 @@ export function RiskTrendChart() {
 }
 
 export function DistrictImpactChart() {
-  const { scenario } = useDashboard();
   const live = useLiveStats();
-  const liveMode = live.openCount > 0;
-  const data = liveMode
-    ? [...live.clusters]
-        .sort((a, b) => b.people - a.people || b.count - a.count)
-        .slice(0, 8)
-        .map((c) => ({ name: c.label, affected: Math.max(c.people, c.count) }))
-    : [...scenario.districts]
-        .sort((a, b) => b.affected - a.affected)
-        .slice(0, 8)
-        .map((d) => ({ name: d.name, affected: d.affected }));
+  const data = [...live.clusters]
+    .sort((a, b) => b.people - a.people || b.count - a.count)
+    .slice(0, 8)
+    .map((c) => ({ name: c.label, affected: Math.max(c.people, c.count) }));
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>{liveMode ? "At-Risk Zones by People" : "Top Displaced Districts"}</CardTitle>
-        <span className="font-mono text-[10px] text-muted">{liveMode ? "people in open signals" : "population"}</span>
+        <CardTitle>At-Risk Zones by People</CardTitle>
+        <span className="font-mono text-[10px] text-muted">people in open signals</span>
       </CardHeader>
       <CardContent className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +104,7 @@ export function DistrictImpactChart() {
                 fontSize: 11,
               }}
               labelStyle={{ color: "#0f172a" }}
-              formatter={(v) => [formatNum(Number(v ?? 0)), "Displaced"]}
+              formatter={(v) => [formatNum(Number(v ?? 0)), "People"]}
             />
             <Bar dataKey="affected" fill="#2563eb" radius={[0, 3, 3, 0]} barSize={12} />
           </BarChart>

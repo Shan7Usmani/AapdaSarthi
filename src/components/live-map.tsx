@@ -6,15 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useMapEvents } from "react-leaflet";
 import { CloudRain, WifiOff, RefreshCw, ZoomIn, Route, Navigation } from "lucide-react";
-import { useDashboard } from "@/store/dashboard-store";
 import { useLiveStats } from "@/lib/live-stats";
-import { ASSAM_DISTRICTS } from "@/data/assam-districts";
-import { KERALA_DISTRICTS } from "@/data/kerala-districts";
-import type { DistrictShape } from "@/data/assam-districts";
 import { getRainfall, BAND_META, rainfallBand, type RainfallPoint } from "@/lib/rainfall";
 import { type DistrictRiskOutput, type RiskBand } from "@/lib/risk";
 import { generateSafeRoute, fallbackRoute } from "@/lib/routing";
-import type { DistrictRisk, EvacRoute } from "@/lib/types";
+import type { EvacRoute } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +19,6 @@ const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapCont
   loading: () => <MapLoading />,
 });
 const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
-const Polygon = dynamic(() => import("react-leaflet").then((m) => m.Polygon), { ssr: false });
 const Polyline = dynamic(() => import("react-leaflet").then((m) => m.Polyline), { ssr: false });
 const CircleMarker = dynamic(() => import("react-leaflet").then((m) => m.CircleMarker), {
   ssr: false,
@@ -33,27 +28,6 @@ const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ss
 const ZoomControl = dynamic(() => import("react-leaflet").then((m) => m.ZoomControl), {
   ssr: false,
 });
-
-const severityColor: Record<string, string> = {
-  CRITICAL: "#dc2626",
-  HIGH: "#ea580c",
-  MODERATE: "#ca8a04",
-  LOW: "#16a34a",
-};
-
-const severityFill: Record<string, string> = {
-  CRITICAL: "rgba(220,38,38,0.32)",
-  HIGH: "rgba(234,88,12,0.28)",
-  MODERATE: "rgba(202,138,4,0.24)",
-  LOW: "rgba(22,163,74,0.22)",
-};
-
-const BRAHMAPUTRA: [number, number][] = [
-  [26.24, 90.02], [26.31, 90.32], [26.38, 90.62], [26.44, 90.92], [26.5, 91.22],
-  [26.55, 91.52], [26.58, 91.82], [26.61, 92.12], [26.65, 92.42], [26.7, 92.72],
-  [26.76, 93.02], [26.83, 93.32], [26.9, 93.62], [26.97, 93.92], [27.05, 94.22],
-  [27.14, 94.52], [27.24, 94.82], [27.33, 95.12], [27.42, 95.42],
-];
 
 const riskColor: Record<RiskBand, string> = {
   LOW: "#16a34a",
@@ -72,17 +46,6 @@ function MapLoading() {
       </div>
     </div>
   );
-}
-
-function getDistrictRisk(name: string, districts: DistrictRisk[]): DistrictRisk | undefined {
-  return districts.find((d) => d.name.toLowerCase() === name.toLowerCase());
-}
-
-function polygonsFor(state: string): DistrictShape[] {
-  const s = state.toLowerCase();
-  if (s === "kerala") return KERALA_DISTRICTS;
-  if (s === "assam") return ASSAM_DISTRICTS;
-  return [];
 }
 
 function ZoomWatcher({ onZoom }: { onZoom: (z: number) => void }) {
@@ -125,133 +88,6 @@ function RainfallMarkers({ points }: { points: RainfallPoint[] | null }) {
           </CircleMarker>
         );
       })}
-    </>
-  );
-}
-
-/* ---------- scenario layers (visible when zoomed in to analyze) ---------- */
-function DistrictLabels({ show }: { show: boolean }) {
-  const { scenario } = useDashboard();
-  const [L, setL] = useState<typeof import("leaflet") | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    import("leaflet").then((mod) => {
-      if (alive) setL(mod);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  if (!L || !show) return null;
-
-  return (
-    <>
-      {polygonsFor(scenario.state).map((d) => {
-        const risk = getDistrictRisk(d.name, scenario.districts);
-        if (!risk) return null;
-        const icon = L.divIcon({
-          className: "",
-          html: `<div class="dist-label" data-sev="${risk.severity}">${d.name}</div>`,
-          iconSize: [90, 18],
-          iconAnchor: [45, 9],
-        });
-        return (
-          <Marker
-            key={`l-${d.name}`}
-            position={[risk.centroid[1], risk.centroid[0]]}
-            icon={icon}
-            interactive={false}
-          />
-        );
-      })}
-    </>
-  );
-}
-
-function StateIndicator({ show }: { show: boolean }) {
-  const { scenario } = useDashboard();
-  const [L, setL] = useState<typeof import("leaflet") | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    import("leaflet").then((mod) => {
-      if (alive) setL(mod);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  if (!L || !show) return null;
-
-  const icon = L.divIcon({
-    className: "",
-    html: `<div class="state-pulse">${scenario.state.toUpperCase()} · FLOOD ACTIVE · ZOOM</div>`,
-    iconSize: [208, 30],
-    iconAnchor: [104, 15],
-  });
-  return <Marker position={scenario.center} icon={icon} interactive={false} />;
-}
-
-function EvacRouteLayer({ route }: { route: EvacRoute }) {
-  const [step, setStep] = useState(0);
-  const [L, setL] = useState<typeof import("leaflet") | null>(null);
-
-  useEffect(() => {
-    const t = setInterval(() => setStep((s) => (s + 1) % route.path.length), 600);
-    let alive = true;
-    import("leaflet").then((mod) => {
-      if (alive) setL(mod);
-    });
-    return () => {
-      clearInterval(t);
-      alive = false;
-    };
-  }, [route.path.length]);
-
-  const pts = route.path as [number, number][];
-  const head = pts[step];
-  const startIcon = L
-    ? L.divIcon({
-        className: "",
-        html: `<div class="route-start"><span>●</span> ${route.from}</div>`,
-        iconSize: [70, 16],
-        iconAnchor: [0, 8],
-      })
-    : undefined;
-  const endIcon = L
-    ? L.divIcon({
-        className: "",
-        html: `<div class="route-end"><span>▼</span> ${route.to}</div>`,
-        iconSize: [90, 16],
-        iconAnchor: [45, 16],
-      })
-    : undefined;
-
-  return (
-    <>
-      <Polyline positions={pts} pathOptions={{ color: "#0ea5e9", weight: 6, opacity: 0.18 }} />
-      <Polyline
-        positions={pts}
-        pathOptions={{
-          color: "#0284c7",
-          weight: 2.5,
-          opacity: 0.9,
-          dashArray: "6 8",
-          lineCap: "round",
-        }}
-      />
-      {head && (
-        <CircleMarker
-          center={head}
-          radius={4.5}
-          pathOptions={{ color: "#ffffff", weight: 2, fillColor: "#0ea5e9", fillOpacity: 1 }}
-        />
-      )}
-      {startIcon && <Marker position={pts[0]} interactive={false} icon={startIcon} />}
-      {endIcon && <Marker position={pts[pts.length - 1]} interactive={false} icon={endIcon} />}
     </>
   );
 }
@@ -393,8 +229,6 @@ function SafeRouteBanner({
 
 /* ---------- main map ---------- */
 export function LiveMap() {
-  const { scenario, selectedDistrict, setSelectedDistrict } = useDashboard();
-  const [hovered, setHovered] = useState<string | null>(null);
   const [zoom, setZoom] = useState(4.5);
   const [points, setPoints] = useState<RainfallPoint[] | null>(null);
   const [source, setSource] = useState<"live" | "seeded" | "loading">("loading");
@@ -540,18 +374,15 @@ export function LiveMap() {
     setRouteError(null);
   };
 
-  const districtColors = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const d of polygonsFor(scenario.state)) {
-      const risk = getDistrictRisk(d.name, scenario.districts);
-      map[d.name] = risk ? severityColor[risk.severity] : "#94a3b8";
-    }
-    return map;
-  }, [scenario]);
+  // Live headline numbers straight from the live risk engine + live SOS store.
+  const critical = riskPoints?.filter((d) => d.severity === "CRITICAL").length ?? 0;
+  const high = riskPoints?.filter((d) => d.severity === "HIGH").length ?? 0;
+  const atRisk = critical + high;
+  const totalOpenPeople = useMemo(
+    () => live.openSignals.reduce((a, s) => a + (Number(s.peopleCount) || 0), 0),
+    [live.openSignals]
+  );
 
-  const critical = scenario.districts.filter((d) => d.severity === "CRITICAL").length;
-  const high = scenario.districts.filter((d) => d.severity === "HIGH").length;
-  const totalAffected = scenario.districts.reduce((a, d) => a + d.affected, 0);
   const counts = points
     ? {
         high: points.filter((p) => rainfallBand(p.precipitation) === "high").length,
@@ -575,9 +406,8 @@ export function LiveMap() {
         <ZoomWatcher onZoom={setZoom} />
         <MapClickHandler onPick={handlePick} />
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-          subdomains="abcd"
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <ZoomControl position="bottomright" />
 
@@ -585,47 +415,6 @@ export function LiveMap() {
 
         {/* all-India live risk layer (always) */}
         <LiveRiskLayer points={riskPoints} />
-
-        {/* Brahmaputra river */}
-        <Polyline positions={BRAHMAPUTRA} pathOptions={{ color: "#38bdf8", weight: 3, opacity: 0.8 }} />
-
-        {/* scenario district polygons (state-aware) */}
-        {polygonsFor(scenario.state).map((d) => {
-          const risk = getDistrictRisk(d.name, scenario.districts);
-          const active = selectedDistrict === d.name;
-          return d.rings.map((ring, i) => (
-            <Polygon
-              key={`${d.name}-${i}`}
-              positions={ring as [number, number][]}
-              pathOptions={{
-                color: districtColors[d.name],
-                weight: active ? 2.5 : risk ? 1.6 : 0.8,
-                fillColor: risk ? severityFill[risk.severity] : "#e2e8f0",
-                fillOpacity: risk ? 0.8 : 0.5,
-                opacity: hovered === d.name || active ? 1 : risk ? 0.95 : 0.7,
-              }}
-              eventHandlers={{
-                mouseover: () => setHovered(d.name),
-                mouseout: () => setHovered(null),
-                click: () => setSelectedDistrict(selectedDistrict === d.name ? null : d.name),
-              }}
-            >
-              <Tooltip sticky direction="top" className="district-tooltip" opacity={1}>
-                <div className="font-semibold">{d.name}</div>
-                {risk ? (
-                  <div className="mt-0.5 font-mono text-[10px]">
-                    <span className={cn(risk.severity === "CRITICAL" && "text-danger")}>
-                      {risk.severity}
-                    </span>{" "}
-                    · Risk {risk.riskScore}/100 · {risk.affected.toLocaleString("en-IN")} displaced
-                  </div>
-                ) : (
-                  <div className="mt-0.5 text-[10px] text-muted">No active risk</div>
-                )}
-              </Tooltip>
-            </Polygon>
-          ));
-        })}
 
         {/* live SOS incident markers — real-time field signals */}
         {live.openSignals.map((s) =>
@@ -644,13 +433,6 @@ export function LiveMap() {
             </CircleMarker>
           ) : null
         )}
-
-        <DistrictLabels show={detailed} />
-        <StateIndicator show={!detailed} />
-
-        {/* evacuation routes — shown when analyzing */}
-        {detailed &&
-          scenario.routes.map((r) => <EvacRouteLayer key={r.id} route={r} />)}
 
         {/* interactive safe route markers */}
         {routeOrigin && (
@@ -687,14 +469,14 @@ export function LiveMap() {
         )}
       </MapContainer>
 
-      {/* top-left overlay: scenario */}
+      {/* top-left overlay: live risk summary */}
       <div className="pointer-events-none absolute top-3 left-3 z-[1000] rounded border border-border-strong bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
         <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan">
-          {scenario.name} · {scenario.state} {scenario.year}
+          Live Flood Risk · All India
         </div>
         <div className="mt-1 font-mono text-[10px] text-muted">
           <span className="text-danger">{critical} CRITICAL</span> ·{" "}
-          <span className="text-warn">{high} HIGH</span>
+          <span className="text-warn">{high} HIGH</span> districts
         </div>
         <div className="mt-1 font-mono text-[10px] text-danger">
           <span className="text-muted">LIVE SOS:</span> {live.openCount} open ·{" "}
@@ -702,14 +484,16 @@ export function LiveMap() {
         </div>
       </div>
 
-      {/* top-right: displaced */}
+      {/* top-right: at-risk tally from live engine */}
       <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded border border-border-strong bg-white/90 px-3 py-2 text-right shadow-sm backdrop-blur">
-        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">Displaced</div>
+        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+          At-Risk Districts
+        </div>
         <div className="font-mono text-lg font-bold text-danger">
-          {totalAffected.toLocaleString("en-IN")}
+          {atRisk.toLocaleString("en-IN")}
         </div>
         <div className="font-mono text-[9px] text-muted">
-          people across {scenario.districts.length} districts
+          CRITICAL + HIGH · {totalOpenPeople.toLocaleString("en-IN")} people in open signals
         </div>
       </div>
 

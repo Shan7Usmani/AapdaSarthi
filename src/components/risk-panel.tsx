@@ -1,7 +1,6 @@
 "use client";
 
-import { BrainCircuit, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { useDashboard } from "@/store/dashboard-store";
+import { BrainCircuit, ChevronRight, TrendingUp, TrendingDown, Minus, RadioTower } from "lucide-react";
 import { useLiveStats } from "@/lib/live-stats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,26 +14,22 @@ const severityColor: Record<string, string> = {
 };
 
 export function RiskPanel() {
-  const { scenario, selectedDistrict, setSelectedDistrict } = useDashboard();
   const live = useLiveStats();
 
-  // Live mode: risk zones derived from actual open SOS signals. Fall back to
-  // the demo scenario districts only when there are no live signals at all.
-  const liveMode = live.openCount > 0;
-  const zones = liveMode
-    ? live.clusters.map((c) => ({
-        name: c.label,
-        severity: c.risk as "CRITICAL" | "HIGH" | "MODERATE" | "LOW",
-        riskScore: Math.min(99, c.count * 15 + c.people),
-        affected: c.people || c.count,
-        trend: "rising" as const,
-        live: true,
-      }))
-    : scenario.districts.map((d) => ({ ...d, live: false }));
+  // Live risk zones derived directly from actual open SOS field signals.
+  const zones = live.clusters.map((c) => ({
+    name: c.label,
+    severity: c.risk as "CRITICAL" | "HIGH" | "MODERATE" | "LOW",
+    riskScore: Math.min(99, c.count * 15 + c.people),
+    affected: c.people || c.count,
+    trend: "rising" as const,
+    live: true,
+  }));
 
   const sorted = [...zones].sort((a, b) => severityOrder[b.severity] - severityOrder[a.severity]);
   const critical = zones.filter((d) => d.severity === "CRITICAL").length;
   const high = zones.filter((d) => d.severity === "HIGH").length;
+  const liveMode = live.openCount > 0;
 
   return (
     <Card>
@@ -42,15 +37,17 @@ export function RiskPanel() {
         <CardTitle className="flex items-center gap-1.5">
           <BrainCircuit className="h-3.5 w-3.5 text-cyan" /> AI Risk Prediction
         </CardTitle>
-        <Badge severity={critical > 0 ? "CRITICAL" : high > 0 ? "HIGH" : "MODERATE"}>
-          {critical} Critical · {high} High
-        </Badge>
+        {liveMode && (
+          <Badge severity={critical > 0 ? "CRITICAL" : high > 0 ? "HIGH" : "MODERATE"}>
+            {critical} Critical · {high} High
+          </Badge>
+        )}
       </CardHeader>
       <CardContent className="space-y-1.5 p-2.5">
-        <div className="rounded border border-cyan/25 bg-cyan/5 px-3 py-2 font-mono text-[11px] leading-relaxed text-cyan/90">
-          <span className="text-muted">» AI verdict:</span>{" "}
-          {liveMode ? (
-            <>
+        {liveMode ? (
+          <>
+            <div className="rounded border border-cyan/25 bg-cyan/5 px-3 py-2 font-mono text-[11px] leading-relaxed text-cyan/90">
+              <span className="text-muted">» AI verdict:</span>{" "}
               {live.openCount} live open signal
               {live.openCount === 1 ? "" : "s"} across {live.clusters.length} risk zone
               {live.clusters.length === 1 ? "" : "s"} ·{" "}
@@ -58,61 +55,46 @@ export function RiskPanel() {
                 {critical > 0 ? "CRITICAL" : "HIGH"}
               </span>{" "}
               priority zones now.
-            </>
-          ) : (
-            <>
-              {critical} district
-              {critical > 1 ? "s" : ""} at{" "}
-              <span className="text-danger font-semibold">
-                {critical > 0 ? "CRITICAL" : "HIGH"}
-              </span>{" "}
-              risk in next 48h based on rainfall + river-level telemetry.
-            </>
-          )}
-        </div>
+            </div>
 
-        <div className="space-y-1">
-          {sorted.slice(0, 12).map((d) => {
-            const active = selectedDistrict === d.name;
-            const Trend =
-              d.trend === "rising" ? TrendingUp : d.trend === "falling" ? TrendingDown : Minus;
-            return (
-              <button
-                key={d.name}
-                onClick={() => setSelectedDistrict(active ? null : d.name)}
-                className={cn(
-                  "group flex w-full items-center gap-2 rounded border px-2.5 py-1.5 text-left transition-colors cursor-pointer",
-                  active
-                    ? "border-cyan/50 bg-cyan/10"
-                    : "border-border hover:border-border-strong hover:bg-panel-2"
-                )}
-              >
-                <span
-                  className="h-2 w-2 shrink-0 rounded-sm"
-                  style={{ background: severityColor[d.severity] }}
-                />
-                <span className="flex-1 truncate text-[12px] text-foreground">{d.name}</span>
-                <Trend
-                  className={cn(
-                    "h-3 w-3 shrink-0",
-                    d.trend === "rising"
-                      ? "text-danger"
-                      : d.trend === "falling"
-                        ? "text-safe"
-                        : "text-muted"
-                  )}
-                />
-                <span className="font-mono text-[11px] text-muted">
-                  {formatNum(d.affected)}
-                </span>
-                <span className="font-mono text-[11px] font-semibold text-foreground w-7 text-right">
-                  {d.riskScore}
-                </span>
-                <ChevronRight className="h-3 w-3 text-muted opacity-0 group-hover:opacity-100" />
-              </button>
-            );
-          })}
-        </div>
+            <div className="space-y-1">
+              {sorted.slice(0, 12).map((d) => {
+                const Trend =
+                  d.trend === "rising" ? TrendingUp : d.trend === "falling" ? TrendingDown : Minus;
+                return (
+                  <div
+                    key={d.name}
+                    className="flex w-full items-center gap-2 rounded border border-border px-2.5 py-1.5"
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-sm"
+                      style={{ background: severityColor[d.severity] }}
+                    />
+                    <span className="flex-1 truncate text-[12px] text-foreground">{d.name}</span>
+                    <Trend className={cn("h-3 w-3 shrink-0 text-danger")} />
+                    <span className="font-mono text-[11px] text-muted">
+                      {formatNum(d.affected)}
+                    </span>
+                    <span className="font-mono text-[11px] font-semibold text-foreground w-7 text-right">
+                      {d.riskScore}
+                    </span>
+                    <ChevronRight className="h-3 w-3 text-muted opacity-0" />
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+            <RadioTower className="h-6 w-6 text-muted/60" />
+            <div className="font-mono text-[12px] text-muted">
+              No live field signals yet
+            </div>
+            <div className="font-mono text-[10px] text-muted">
+              Awaiting SOS data from citizen &amp; rescuer devices…
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

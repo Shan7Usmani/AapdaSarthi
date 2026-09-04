@@ -1,21 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Send, Copy, Check, Languages, Users, MessageSquareText } from "lucide-react";
-import { useDashboard } from "@/store/dashboard-store";
+import { getRainfall, rainfallBand, type RainfallPoint } from "@/lib/rainfall";
+import { useLiveStats } from "@/lib/live-stats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn, formatNum } from "@/lib/utils";
 
+const LANGS = [
+  { code: "en", lang: "English" },
+  { code: "hi", lang: "हिन्दी" },
+  { code: "as", lang: "অসমীয়া" },
+  { code: "ml", lang: "മലയാളം" },
+  { code: "bn", lang: "বাংলা" },
+];
+
+function template(region: string, code: string): string {
+  switch (code) {
+    case "hi":
+      return `⚠️ BAADH CHETAVANI — ${region} aur aas-paas ke ilakon me bhari baarish ka khatra. Flood ki sthiti me turant uchch sthal par jayein, nadion aur halki naharon se door rahein. Evacuation ke liye aapda sahayak team se sampark karein. — SDMA`;
+    case "as":
+      return `⚠️ BAN POTHABORONI — ${region} aru nikot anchalot bori borokhonor khoti. Banor sthitit lagate niropod sthanoloi gobo. Nodi aru halka jal nojora kintu. Sankhaile onuprobesi dolot jonog. — SDMA`;
+    case "ml":
+      return `⚠️ VELLAPPOKKAM MUNNIYARIPP — ${region} ilum sameeppapradeshangalilum kanam mazha bhayam. Vellapokkam undayal udane suvajrotha sthalathekk machuka. Nadikalilum aazhukalilum peade veruka. Odapakachiyude teamumayi bandhappettukolluka. — SDMA`;
+    case "bn":
+      return `⚠️ BANNA SOTORKONI — ${region} o aashpash-er anchale prabal brishtir khoti. Banna poristhitite sleep-e niropod othan-e chole jan. Nadir o halka joler dhar kachhe jaoa theke birat thakun. Uddaarer jonno team-er sathe jogajog korun. — SDMA`;
+    default:
+      return `⚠️ FLOOD WARNING — Risk of heavy rain across ${region} and nearby areas. In case of flooding, move to higher ground immediately, stay away from rivers and low-lying floodplains. Contact the rescue command team for evacuation support. — SDMA`;
+  }
+}
+
 export function AlertComposer() {
-  const { scenario } = useDashboard();
+  const [points, setPoints] = useState<RainfallPoint[] | null>(null);
   const [activeLang, setActiveLang] = useState(0);
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const alerts = scenario.alerts;
+  const live = useLiveStats();
+
+  useEffect(() => {
+    let alive = true;
+    getRainfall().then(({ points: pts }) => {
+      if (alive) setPoints(pts);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const focus = useMemo(() => {
+    const pts = points ?? [];
+    const zones = pts
+      .filter((p) => rainfallBand(p.precipitation) !== "low")
+      .sort((a, b) => b.precipitation - a.precipitation);
+    return zones[0]?.name ?? null;
+  }, [points]);
+
+  const totalRecipients = live.openCount > 0 ? totalPeople(live.openSignals) : 1250;
+
+  const alerts = useMemo(
+    () =>
+      LANGS.map((l) => ({
+        lang: l.lang,
+        code: l.code,
+        sms: template(focus ?? "your area", l.code),
+        recipients: totalRecipients,
+      })),
+    [focus, totalRecipients]
+  );
+
   const active = alerts[activeLang] ?? alerts[0];
-  const totalRecipients = alerts.reduce((a, al) => a + al.recipients, 0);
 
   const handleSend = () => {
     setSent(true);
@@ -67,7 +122,7 @@ export function AlertComposer() {
               SMS preview · {active.code}
             </span>
             <span className="font-mono text-[9px] text-muted">
-              {active.sms.length} chars · 1 segment
+              {active.sms.length} chars · 2-3 segments
             </span>
           </div>
           <p className="text-[12px] leading-relaxed text-foreground/90">{active.sms}</p>
@@ -97,4 +152,8 @@ export function AlertComposer() {
       </CardContent>
     </Card>
   );
+}
+
+function totalPeople(signals: { peopleCount?: number | string | null }[]): number {
+  return signals.reduce((a, s) => a + (Number(s.peopleCount) || 0), 0);
 }

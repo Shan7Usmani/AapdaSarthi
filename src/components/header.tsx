@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Radio, Waves, Satellite } from "lucide-react";
+import { Activity, Radio, Waves } from "lucide-react";
 import { useDashboard } from "@/store/dashboard-store";
-import { SCENARIOS } from "@/data/scenarios";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Header() {
-  const { scenarioId, setScenario, liveMode, toggleLive } = useDashboard();
+  const { liveMode, toggleLive } = useDashboard();
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [uptime, setUptime] = useState(0);
@@ -51,25 +50,6 @@ export function Header() {
         </div>
 
         <div className="mx-2 hidden md:block h-8 w-px bg-slate-200" />
-
-        {/* event selector */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {SCENARIOS.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setScenario(s.id)}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors cursor-pointer",
-                scenarioId === s.id
-                  ? "border-cyan bg-cyan/10 text-cyan"
-                  : "border-slate-200 bg-white text-muted hover:text-foreground hover:border-cyan/50"
-              )}
-            >
-              <Satellite className="h-3.5 w-3.5 opacity-70" />
-              {s.name} {s.year}
-            </button>
-          ))}
-        </div>
 
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden lg:flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-mono text-[12px] text-muted shadow-sm">
