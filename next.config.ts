@@ -8,10 +8,14 @@ const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
 
   additionalPrecacheEntries: [
-    {
-      url: "/citizen",
-      revision: "1",
-    },
+    // Precache every key route so the whole app — citizen SOS, rescuer
+    // dispatch, HQ board, landing — keeps working offline, not just /citizen.
+    { url: "/", revision: "1" },
+    { url: "/citizen", revision: "1" },
+    { url: "/rescuer", revision: "1" },
+    { url: "/hq", revision: "1" },
+    // Branded offline fallback used by navigateFallback.
+    { url: "/offline", revision: "1" },
   ],
 });
 
