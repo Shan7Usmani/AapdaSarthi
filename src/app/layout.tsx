@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SosSync } from "@/components/sos-sync";
 import { DemoSeed } from "@/components/demo-seed";
 import { ConnectivityBanner } from "@/components/connectivity-banner";
-import { SimulateOfflineToggle } from "@/components/simulate-offline-toggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,7 +46,6 @@ export default function RootLayout({
         <SosSync />
         <DemoSeed />
         {children}
-        <SimulateOfflineToggle />
       </body>
     </html>
   );
