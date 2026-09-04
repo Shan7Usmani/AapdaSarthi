@@ -172,6 +172,12 @@ export function SosSync() {
           const row = payload.new as { id: string; data: SosItem } | null;
           if (!row) return;
           const cur = useSosStore.getState();
+          const existing = cur.sos.find((s) => s.id === row.id);
+          // Skip our own echoed write: when this device upserts, Realtime
+          // plays the change straight back. If the timestamp is unchanged it's
+          // our own echo — ignoring it breaks the write-up → echo-down loop
+          // that was making lists re-order and jitter endlessly.
+          if (existing && String(existing.timestamp) === String(row.data.timestamp)) return;
           const next = cur.sos.filter((s) => s.id !== row.id);
           useSosStore.setState({ sos: [row.data, ...next] });
         }
@@ -183,6 +189,8 @@ export function SosSync() {
           const row = payload.new as { id: string; data: ResourceRequest } | null;
           if (!row) return;
           const cur = useSosStore.getState();
+          const existing = cur.requests.find((r) => r.id === row.id);
+          if (existing && String(existing.timestamp) === String(row.data.timestamp)) return;
           const next = cur.requests.filter((r) => r.id !== row.id);
           useSosStore.setState({ requests: [row.data, ...next] });
         }
@@ -194,6 +202,8 @@ export function SosSync() {
           const row = payload.new as { id: string; data: Rescuer } | null;
           if (!row) return;
           const cur = useSosStore.getState();
+          const existing = cur.rescuers.find((r) => r.id === row.id);
+          if (existing && String(existing.lastSeen) === String(row.data.lastSeen)) return;
           const next = cur.rescuers.filter((r) => r.id !== row.id);
           useSosStore.setState({ rescuers: [row.data, ...next] });
         }
