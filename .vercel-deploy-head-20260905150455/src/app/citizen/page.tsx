@@ -1,6 +1,5 @@
 import { RoleNav } from "@/components/role-nav";
 import { SosComposer } from "@/components/sos-composer";
-import { CitizenInbox } from "@/components/citizen-inbox";
 import { Siren, Radio, Users } from "lucide-react";
 
 export const metadata = {
@@ -23,7 +22,6 @@ export default function CitizenPage() {
           </p>
         </div>
         <SosComposer />
-        <CitizenInbox />
         <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[12px] font-medium text-slate-500">
           <span className="flex items-center gap-1.5">
             <Radio className="h-4 w-4 text-cyan" /> routed to nearest rescuer

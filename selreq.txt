@@ -1,0 +1,1 @@
+[{"id":"req-seed-1","data":{"id": "req-seed-1", "sosId": "sos-seed-2", "status": "pending", "medkits": 6, "foodkits": 12, "location": {"lat": 26.4512, "lng": 90.9961}, "timestamp": "2026-09-05T08:37:01.337Z", "transports": 1, "rescuerName": "SDRF Team 4", "locationLabel": "near Barpeta market", "peopleRescued": 2}}]

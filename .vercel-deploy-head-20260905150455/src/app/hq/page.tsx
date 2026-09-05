@@ -6,7 +6,6 @@ import { ResourcePanel } from "@/components/resource-panel";
 import { AlertComposer } from "@/components/alert-composer";
 import { AutoAlerts } from "@/components/auto-alerts";
 import { HqSosBoard } from "@/components/hq-sos-board";
-import { CitizenMessages } from "@/components/citizen-messages";
 import { RiskTrendChart, DistrictImpactChart } from "@/components/charts";
 
 export const metadata = {
@@ -37,7 +36,6 @@ export default function HqPage() {
         {/* right rail — live response ops */}
         <section className="lg:col-span-4 flex flex-col gap-4">
           <HqSosBoard />
-          <CitizenMessages />
           <AutoAlerts />
           <RiskPanel />
           <AlertComposer />

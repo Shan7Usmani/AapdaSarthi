@@ -446,7 +446,24 @@ addSos: (s) => {
             "Water entered our street overnight and is rising fast. We are on the first floor with neighbours — need rescue boats.",
             8,
             26.1445, 90.0226,
-            6
+            6,
+            "open",
+            undefined,
+            {
+              citizenPhone: "+91 97749 22001",
+              citizenMsgs: [
+                {
+                  id: "sos-seed-1-ack",
+                  sosId: "sos-seed-1",
+                  to: "+91 97749 22001",
+                  citizenName: "Ritu Sharma",
+                  stage: "ack",
+                  channel: "sms",
+                  text: "AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.",
+                  at: iso(6),
+                },
+              ],
+            }
           ),
           mk(
             "sos-seed-2",
@@ -458,6 +475,29 @@ addSos: (s) => {
             "claimed",
             "SDRF Team 4",
             {
+              citizenPhone: "+91 98640 51102",
+              citizenMsgs: [
+                {
+                  id: "sos-seed-2-ack",
+                  sosId: "sos-seed-2",
+                  to: "+91 98640 51102",
+                  citizenName: "Md. Arif",
+                  stage: "ack",
+                  channel: "sms",
+                  text: "AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.",
+                  at: iso(22),
+                },
+                {
+                  id: "sos-seed-2-claimed",
+                  sosId: "sos-seed-2",
+                  to: "+91 98640 51102",
+                  citizenName: "Md. Arif",
+                  stage: "claimed",
+                  channel: "sms",
+                  text: "AapdaSaarthi: SDRF Team 4 has taken your request. Help is on the way to you now.",
+                  at: iso(19),
+                },
+              ],
               updates: [
                 {
                   id: "u-seed-2-a",
@@ -486,7 +526,50 @@ addSos: (s) => {
             "delivered",
             "NDRF Alpha",
             {
+              citizenPhone: "+91 70860 33199",
               deliveredAt: iso(44),
+              citizenMsgs: [
+                {
+                  id: "sos-seed-3-ack",
+                  sosId: "sos-seed-3",
+                  to: "+91 70860 33199",
+                  citizenName: "Priya Dev",
+                  stage: "ack",
+                  channel: "sms",
+                  text: "AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.",
+                  at: iso(47),
+                },
+                {
+                  id: "sos-seed-3-claimed",
+                  sosId: "sos-seed-3",
+                  to: "+91 70860 33199",
+                  citizenName: "Priya Dev",
+                  stage: "claimed",
+                  channel: "sms",
+                  text: "AapdaSaarthi: NDRF Alpha has taken your request. Help is on the way to you now.",
+                  at: iso(46),
+                },
+                {
+                  id: "sos-seed-3-reached",
+                  sosId: "sos-seed-3",
+                  to: "+91 70860 33199",
+                  citizenName: "Priya Dev",
+                  stage: "reached",
+                  channel: "sms",
+                  text: "AapdaSaarthi: NDRF Alpha is at your location. Follow their instructions.",
+                  at: iso(45),
+                },
+                {
+                  id: "sos-seed-3-delivered",
+                  sosId: "sos-seed-3",
+                  to: "+91 70860 33199",
+                  citizenName: "Priya Dev",
+                  stage: "delivered",
+                  channel: "sms",
+                  text: "AapdaSaarthi: item delivered to Priya Dev. You are in safe hands. — Command Centre",
+                  at: iso(44),
+                },
+              ],
               updates: [
                 {
                   id: "u-seed-3-a",
@@ -515,7 +598,40 @@ addSos: (s) => {
             "reached",
             "SDRF Team 4",
             {
+              citizenPhone: "+91 94012 44877",
               reachedAt: iso(90),
+              citizenMsgs: [
+                {
+                  id: "sos-seed-4-ack",
+                  sosId: "sos-seed-4",
+                  to: "+91 94012 44877",
+                  citizenName: "Sunil Boro",
+                  stage: "ack",
+                  channel: "sms",
+                  text: "AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.",
+                  at: iso(95),
+                },
+                {
+                  id: "sos-seed-4-claimed",
+                  sosId: "sos-seed-4",
+                  to: "+91 94012 44877",
+                  citizenName: "Sunil Boro",
+                  stage: "claimed",
+                  channel: "sms",
+                  text: "AapdaSaarthi: SDRF Team 4 has taken your request. Help is on the way to you now.",
+                  at: iso(94),
+                },
+                {
+                  id: "sos-seed-4-reached",
+                  sosId: "sos-seed-4",
+                  to: "+91 94012 44877",
+                  citizenName: "Sunil Boro",
+                  stage: "reached",
+                  channel: "sms",
+                  text: "AapdaSaarthi: SDRF Team 4 is at your location. Follow their instructions.",
+                  at: iso(90),
+                },
+              ],
               updates: [
                 {
                   id: "u-seed-4-a",
@@ -534,7 +650,9 @@ addSos: (s) => {
             1,
             26.5451, 90.2664,
             130,
-            "open"
+            "open",
+            undefined,
+            { citizenPhone: "+91 91010 88234" }
           ),
         ];
         const seedRequests: ResourceRequest[] = [

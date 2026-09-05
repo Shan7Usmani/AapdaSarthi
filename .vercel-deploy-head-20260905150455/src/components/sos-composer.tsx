@@ -16,7 +16,7 @@ import {
   MessageSquareText,
   Radio,
 } from "lucide-react";
-import { useSosStore, formatCitizenPhone, type MediaAttachment } from "@/store/sos-store";
+import { useSosStore, type MediaAttachment } from "@/store/sos-store";
 import { useOnline, getEffectiveOnline } from "@/store/connectivity";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,6 @@ export function SosComposer() {
   const addSos = useSosStore((s) => s.addSos);
   const isOnline = useOnline();
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [peopleCount, setPeopleCount] = useState(1);
   const [loc, setLoc] = useState<{ lat: number; lng: number; accuracy?: number } | null>(
@@ -224,12 +223,7 @@ const fetchLocation = () => {
     setLocStatus("ok");
   };
 
-  const phoneDigits = phone.replace(/\D/g, "");
-  const phoneOk =
-    (phoneDigits.length === 10 && /^[6-9]\d{9}$/.test(phoneDigits)) ||
-    (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
-  const canSubmit =
-    message.trim().length > 0 && locStatus === "ok" && phoneOk;
+  const canSubmit = message.trim().length > 0 && locStatus === "ok";
 
   const canReachServer = async (): Promise<boolean> => {
   if (!getEffectiveOnline()) {
@@ -302,13 +296,7 @@ const handleSubmit = async () => {
       loc ?? undefined,
 
     media,
-
-    // the number the command centre replies to — the SAME number this SOS
-    // is being sent from (required so confirmations reach this handset)
-    citizenPhone: formatCitizenPhone(phoneDigits),
   });
-
-  localStorage.setItem("aapda-saarthi-my-phone", phoneDigits);
 
   /*
    * ------------------------------------------------
@@ -453,24 +441,6 @@ setSentId(id);
             placeholder="e.g. Ritu Sharma"
             className="w-full rounded-md border border-border-strong bg-slate-50 px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
           />
-        </div>
-
-        <div>
-          <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-muted">
-            Contact number for updates
-          </label>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            type="tel"
-            placeholder="10-digit mobile · +91 97749 22001"
-            className="w-full rounded-md border border-border-strong bg-slate-50 px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
-          />
-          {phone.trim() && !phoneOk && (
-            <p className="mt-1 font-mono text-[10px] text-danger">
-              Enter a valid 10-digit Indian mobile so updates reach this phone.
-            </p>
-          )}
         </div>
 
         <div>
@@ -626,7 +596,7 @@ setSentId(id);
         </Button>
         {!canSubmit ? (
           <p className="text-center font-mono text-[10px] text-muted">
-            add your number + a message + location to transmit
+            add a message + fetch location to transmit
           </p>
           ) : !isOnline ? (
           <p className="text-center font-mono text-[10px] text-danger">
