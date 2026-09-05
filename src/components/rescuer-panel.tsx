@@ -190,6 +190,14 @@ export function RescuerPanel() {
                 : "Set my location"}
           </Button>
         </CardContent>
+        <p className="mx-1 mb-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] text-muted">
+          <span>
+            Claiming signals as{" "}
+            <span className="font-semibold text-foreground">{rescuerName.trim() || "Rescuer"}</span>
+            {!rescuerName.trim() && " — tap Take control and it self-assigns"}
+          </span>
+          <span className="ml-auto text-muted/50">build 6167a46</span>
+        </p>
       </Card>
 
       {/* tabs */}
@@ -323,9 +331,10 @@ export function RescuerPanel() {
                   <Button
                     variant="danger"
                     size="md"
-                    disabled={!rescuerName.trim()}
                     onClick={() => {
                       // Take control of the signal and move to "My rescues".
+                      // claimSos self-assigns "Rescuer" when no name is typed so
+                      // the button ALWAYS works — no silently-disabled state.
                       // NOTE: do NOT open the resource-request form here — that
                       // jarred the UI by force-popping a form the instant a
                       // rescuer took over. The form opens only when they tap
