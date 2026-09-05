@@ -115,7 +115,7 @@ export function RescuerPanel() {
         .filter(
           (s) =>
             (s.status === "claimed" || s.status === "reached" || s.status === "delivered") &&
-            s.rescuerName === rescuerName
+            s.rescuerName?.trim().toLowerCase() === rescuerName.trim().toLowerCase()
         )
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
     [sos, rescuerName]

@@ -176,8 +176,8 @@ export const useSosStore = create<SosState>()(
             if (s.id !== id) return s;
             return {
               ...s,
-              status: "claimed",
-              rescuerName: get().rescuerName || "Rescuer",
+status: "claimed",
+              rescuerName: (get().rescuerName || "").trim() || "Rescuer",
               updatedAt: new Date().toISOString(),
             };
           }),
