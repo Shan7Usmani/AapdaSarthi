@@ -113,24 +113,47 @@ export function buildCitizenMsg(
   by?: string
 ): CitizenMessage | null {
   if (!s.citizenPhone) return null;
-  const text =
-    stage === "ack"
-      ? `AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.`
-      : stage === "claimed"
-        ? `AapdaSaarthi: ${by ?? "a rescue team"} has taken your request. Help is on the way to you now.`
-        : stage === "reached"
-          ? `AapdaSaarthi: ${by ?? "your rescue team"} is at your location. Follow their instructions.`
-          : `AapdaSaarthi: item delivered to ${s.citizenName}. You are in safe hands. — Command Centre`;
+  const text = citizenStageText(s, stage, by);
+  const to = formatCitizenPhone(s.citizenPhone);
   return {
     id: `${s.id}-${stage}-${Date.now()}`,
     sosId: s.id,
-    to: formatCitizenPhone(s.citizenPhone),
+    to,
     citizenName: s.citizenName,
     stage,
     channel: "sms",
     text,
     at: new Date().toISOString(),
   };
+}
+
+/** The human-read message for a lifecycle stage (shared by the log + the real send). */
+export function citizenStageText(
+  s: SosItem,
+  stage: CitizenMessage["stage"],
+  by?: string
+): string {
+  return stage === "ack"
+    ? `AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.`
+    : stage === "claimed"
+      ? `AapdaSaarthi: ${by ?? "a rescue team"} has taken your request. Help is on the way to you now.`
+      : stage === "reached"
+        ? `AapdaSaarthi: ${by ?? "your rescue team"} is at your location. Follow their instructions.`
+        : `AapdaSaarthi: item delivered to ${s.citizenName}. You are in safe hands. — Command Centre`;
+}
+
+/**
+ * Open the RESCUER's own SMS app, addressed to the citizen's exact number,
+ * pre-filled with the stage message. The rescuer presses send on their phone
+ * and the SMS is delivered for real over their cellular line — no gateway,
+ * no cost, no DLT. Returns null when the SOS carries no contact number.
+ */
+export function smsUriFor(s: SosItem, stage: CitizenMessage["stage"], by?: string): string | null {
+  if (!s.citizenPhone) return null;
+  const digits = s.citizenPhone.replace(/\D/g, "");
+  const e164 = digits.length === 10 ? `+91${digits}` : digits.length === 11 ? `+${digits}` : digits;
+  if (!/^\+91\d{10}$/.test(e164)) return null;
+  return `sms:${encodeURIComponent(e164)}?body=${encodeURIComponent(citizenStageText(s, stage, by))}`;
 }
 
 export interface ResourceRequest {

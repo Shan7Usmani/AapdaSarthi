@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -19,7 +19,8 @@ import {
   Clock3,
   Phone,
 } from "lucide-react";
-import { useSosStore, maskCitizenPhone, type SosItem } from "@/store/sos-store";
+import { useSosStore, maskCitizenPhone, smsUriFor, type SosItem } from "@/store/sos-store";
+import { isPwaInstalled } from "@/lib/pwa";
 import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,15 @@ export function RescuerPanel() {
     useSosStore();
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
+
+  // Real SMS to the citizen works from the installed PWA only (it hands over
+  // to the phone's native SMS app). On a plain browser tab sms: URIs don't
+  // open reliably, so the button stays hidden there.
+  const [isPwa, setIsPwa] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setIsPwa(isPwaInstalled()), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   // request form state
   const [formFor, setFormFor] = useState<string | null>(null);
@@ -314,9 +324,9 @@ export function RescuerPanel() {
                     <span>±{Math.round(s.location.accuracy)}m</span>
                   )}
                 </div>
-                <MediaChips sos={s} />
+<MediaChips sos={s} />
 
-                {formFor === s.id ? (
+                  {formFor === s.id ? (
                   <div className="flex flex-col gap-2 rounded-md border border-warn/40 bg-warn/5 p-3">
                     <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-warn">
                       <Package className="h-3 w-3" /> Request resources from HQ
@@ -454,7 +464,22 @@ export function RescuerPanel() {
                                 : "allocated"}
                         </Badge>
                       </div>
-                    </div>
+</div>
+                  )}
+
+                  {isPwa && s.citizenPhone && (
+                    <a
+                      href={
+                        smsUriFor(
+                          s,
+                          isDelivered ? "delivered" : isReached ? "reached" : "claimed",
+                          rescuerName.trim() || "your rescue team"
+                        ) ?? "#"
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-md border border-cyan/40 bg-cyan/10 px-2.5 py-1.5 font-mono text-[10px] font-medium uppercase tracking-wider text-cyan transition-colors hover:bg-cyan/20"
+                    >
+                      <MessageSquareText className="h-3 w-3" /> SMS this citizen
+                    </a>
                   )}
 
                   {formFor === s.id ? (
