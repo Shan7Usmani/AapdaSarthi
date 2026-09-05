@@ -36,6 +36,7 @@ export function AlertComposer() {
   const [activeLang, setActiveLang] = useState(0);
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [via, setVia] = useState<"swytchcode" | "simulated" | null>(null);
 
   const live = useLiveStats();
 
@@ -72,8 +73,25 @@ export function AlertComposer() {
 
   const active = alerts[activeLang] ?? alerts[0];
 
-  const handleSend = () => {
+  const handleSend = async () => {
     setSent(true);
+    setVia(null);
+    try {
+      const res = await fetch("/api/alerts/dispatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lang: active.code,
+          region: focus ?? "your area",
+          sms: active.sms,
+          recipients: active.recipients,
+        }),
+      });
+      const json = (await res.json()) as { channel?: string };
+      setVia(json?.channel === "swytchcode" ? "swytchcode" : "simulated");
+    } catch {
+      setVia("simulated");
+    }
     setTimeout(() => setSent(false), 2600);
   };
 
@@ -130,7 +148,10 @@ export function AlertComposer() {
           {sent && (
             <div className="absolute inset-0 grid place-items-center rounded-md bg-white/90 backdrop-blur-sm">
               <div className="flex items-center gap-2 rounded border border-safe/50 bg-safe/10 px-4 py-2 font-mono text-[12px] text-safe">
-                <Send className="h-3.5 w-3.5" /> ALERT QUEUED → SMS gateway
+                <Send className="h-3.5 w-3.5" />
+                {via === "swytchcode"
+                  ? "ALERT EXECUTED VIA SWYTCHCODE"
+                  : "ALERT QUEUED → SIMULATED BROADCAST"}
               </div>
             </div>
           )}

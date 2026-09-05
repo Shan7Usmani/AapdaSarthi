@@ -38,6 +38,7 @@ export function AutoAlerts() {
   const [source, setSource] = useState<"live" | "seeded">("live");
   const [activeLang, setActiveLang] = useState(0);
   const [sent, setSent] = useState(false);
+  const [via, setVia] = useState<"swytchcode" | "simulated" | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -65,9 +66,25 @@ export function AutoAlerts() {
     ? template(primary, active.code)
     : `⚠️ NO WARNING — Rainfall within safe limits across monitored regions. — SDMA`;
 
-  const handleSend = () => {
+  const handleSend = async () => {
     setSent(true);
-    setTimeout(() => setSent(false), 2400);
+    setVia(null);
+    try {
+      const res = await fetch("/api/alerts/dispatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lang: active.code,
+          region: primary?.name ?? "unknown",
+          sms: alertText,
+        }),
+      });
+      const json = (await res.json()) as { channel?: string };
+      setVia(json?.channel === "swytchcode" ? "swytchcode" : "simulated");
+    } catch {
+      setVia("simulated");
+    }
+    setTimeout(() => setSent(false), 2600);
   };
 
   return (
@@ -133,7 +150,10 @@ export function AutoAlerts() {
           {sent && (
             <div className="absolute inset-0 grid place-items-center rounded-md bg-white/90 backdrop-blur-sm">
               <div className="flex items-center gap-2 rounded border border-safe/50 bg-safe/10 px-4 py-2 font-mono text-[12px] text-safe">
-                <Send className="h-3.5 w-3.5" /> AUTO-BROADCAST QUEUED
+                <Send className="h-3.5 w-3.5" />
+                {via === "swytchcode"
+                  ? "AUTO-BROADCAST EXECUTED VIA SWYTCHCODE"
+                  : "AUTO-BROADCAST QUEUED (SIMULATED)"}
               </div>
             </div>
           )}

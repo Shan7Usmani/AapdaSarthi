@@ -17,6 +17,7 @@
     "@radix-ui/react-tooltip": "^1.2.16",
     "@serwist/next": "^9.5.12",
     "@supabase/supabase-js": "^2.112.4",
+    "@swytchcode/runtime": "^1.1.6",
     "@tanstack/react-query": "^5.101.4",
     "@types/leaflet": "^1.9.22",
     "class-variance-authority": "^0.7.1",

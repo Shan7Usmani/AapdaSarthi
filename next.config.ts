@@ -19,6 +19,8 @@ const withSerwist = withSerwistInit({
   ],
 });
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  serverExternalPackages: ["@swytchcode/runtime"],
+};
 
 export default withSerwist(nextConfig);
