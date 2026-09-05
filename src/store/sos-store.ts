@@ -149,9 +149,17 @@ export function citizenStageText(
  * no cost, no DLT. Returns null when the SOS carries no contact number.
  */
 export function smsUriFor(s: SosItem, stage: CitizenMessage["stage"], by?: string): string | null {
+  // Accepts the same inputs the citizen form + formatCitizenPhone accept:
+  // "9876543210", "+91 98765 43210", "0919876543210", "919876543210".
   if (!s.citizenPhone) return null;
   const digits = s.citizenPhone.replace(/\D/g, "");
-  const e164 = digits.length === 10 ? `+91${digits}` : digits.length === 11 ? `+${digits}` : digits;
+  let e164: string;
+  if (digits.length === 10 && /^[6-9]/.test(digits)) e164 = `+91${digits}`;
+  else if (digits.length === 11 && digits.startsWith("0")) e164 = `+91${digits.slice(1)}`;
+  else if (digits.length === 11 && digits.startsWith("91")) e164 = `+${digits}`;
+  else if (digits.length === 12 && digits.startsWith("91")) e164 = `+${digits}`;
+  else if (digits.length === 13 && digits.startsWith("91")) e164 = `+91${digits.slice(2)}`;
+  else e164 = digits;
   if (!/^\+91\d{10}$/.test(e164)) return null;
   // The recipient must NOT be percent-encoded (sms:%2B91… breaks the native
   // SMS app's number parser). Android reads ?body=, iOS expects &body=.

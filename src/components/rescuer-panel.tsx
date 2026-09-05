@@ -479,7 +479,12 @@ const takeControl = (sosId: string) => {
 </div>
                   )}
 
-                  {canSms && s.citizenPhone && (
+                  {canSms &&
+                    smsUriFor(
+                      s,
+                      isDelivered ? "delivered" : isReached ? "reached" : "claimed",
+                      rescuerName.trim() || "your rescue team"
+                    ) && (
                     <a
                       href={
                         smsUriFor(
