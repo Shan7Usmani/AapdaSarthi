@@ -76,11 +76,9 @@ app to run — it degrades gracefully.
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | app runs localStorage-only (no cross-device sync) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | same as above |
 | `NEXT_PUBLIC_EMERGENCY_SMS_NUMBER` | Intl-format emergency number for the `sms:` fallback link (e.g. `+911234567890`) | SMS fallback uses placeholder `+91XXXXXXXXXX` |
-| `GROQ_API_KEY` | enables Groq AI verdicts | AI falls back to Gemini → deterministic |
-| `GROQ_MODEL` | default `openai/gpt-oss-120b` | — |
 | `GEMINI_API_KEY` | enables Gemini AI verdicts | AI falls back to deterministic |
 | `GEMINI_MODEL` | default `gemini-2.0-flash` | — |
-| `AI_PROVIDER` | `"groq"` \| `"gemini"` to force a provider | auto-detect from which key is present |
+| `AI_PROVIDER` | `"gemini"` to force Gemini | auto-detect when the key is present |
 
 Note: `.env.local` exists locally but is gitignored; **never commit it**.
 
@@ -281,8 +279,8 @@ Also `riskDrivers()` (readable reasons) and `assessDistrict()`.
 
 **API inference (`src/lib/server/ai.ts` + `gemini.ts`):**
 - Builds a prompt from the top-8 at-risk districts; asks for `SUMMARY:/ACTIONS:/ZONES:`.
-- Provider order: forced `AI_PROVIDER`, else Groq if `GROQ_API_KEY`, else Gemini if
-  `GEMINI_API_KEY`, else `deterministicAssessment()`.
+- Provider order: forced `AI_PROVIDER`, else Gemini if `GEMINI_API_KEY`, else
+  `deterministicAssessment()`.
 - Skips the LLM round-trip when there are zero CRITICAL+HIGH districts ("calm nation").
 - Parses the shaped response defensively; per-field fallback to the deterministic template.
 
@@ -397,7 +395,7 @@ Overlays (absolutely positioned):
   `?debug=1` (returns `debug` log array).
 - Flow: `getIndiaDistricts()` → sort worst-first → `getAiAssessment(top, debug?)?` →
   deterministic when `ai=0`.
-- Response: `{ generatedAt, source: "live"|"seeded", provider: "groq"|"gemini"|"deterministic",
+- Response: `{ generatedAt, source: "live"|"seeded", provider: "gemini"|"deterministic",
   gemini: bool, count, totalDistricts, summary: {summary, actions, riskZones}, districts[] }`.
 - Headers: `Cache-Control: no-store`, `Access-Control-Allow-Origin: *`.
 - `export const dynamic = "force-dynamic"`.

@@ -97,7 +97,7 @@ function RainfallMarkers({ points }: { points: RainfallPoint[] | null }) {
 interface RiskApiResp {
   districts?: DistrictRiskOutput[];
   source?: "live" | "seeded";
-  provider?: "groq" | "gemini" | "deterministic";
+  provider?: "gemini" | "deterministic";
   summary?: { summary: string; actions: string[]; riskZones: string[] };
 }
 

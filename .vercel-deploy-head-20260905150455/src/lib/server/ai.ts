@@ -5,19 +5,14 @@ import { deterministicAssessment } from "@/lib/server/gemini";
  * Provider-agnostic AI verdict engine (server-only).
  *
  * Generates the short natural-language "situation report" that powers the HQ
- * command-center narrative from live rainfall telemetry. Supports Groq
- * (Llama, OpenAI-compatible chat completions) and Gemini (generateContent),
- * selected automatically from the configured keys or via AI_PROVIDER.
- *
- * Degrades gracefully: with no key or on any failure it falls back to the
- * deterministic template.
+ * command-center narrative from live rainfall telemetry via Gemini
+ * (generateContent). Falls back to the deterministic template when no key is
+ * present or on any failure.
  *
  * Env:
- *   GROQ_API_KEY            -> enables Groq
- *   GROQ_MODEL              -> default "openai/gpt-oss-120b"
  *   GEMINI_API_KEY          -> enables Gemini
  *   GEMINI_MODEL            -> default "gemini-2.0-flash"
- *   AI_PROVIDER             -> "groq" | "gemini" | undefined (auto-detect)
+ *   AI_PROVIDER             -> "gemini" | undefined (auto-detect when key present)
  */
 
 export interface AIAssessment {
@@ -30,7 +25,6 @@ export { deterministicAssessment };
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const criticalOf = (top: DistrictRiskOutput[]) =>
@@ -79,67 +73,6 @@ function parseVerdict(text: string): { summary: string; actions: string[]; zones
 
 function fallback(top: DistrictRiskOutput[], dateStr: string): AIAssessment {
   return deterministicAssessment(criticalOf(top), highOf(top), dateStr);
-}
-
-async function askGroq(
-  top: DistrictRiskOutput[],
-  debug?: (m: string) => void
-): Promise<AIAssessment | null> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
-    debug?.("GROQ_API_KEY not set");
-    return null;
-  }
-  const model = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
-  const c = criticalOf(top);
-  const h = highOf(top);
-  if (c.length + h.length === 0) return null; // calm nation: skip round-trip
-  const dateStr = today();
-
-  try {
-    const res = await fetch(GROQ_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.4,
-        max_tokens: 400,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a concise disaster-response analyst. Answer only in the requested format.",
-          },
-          { role: "user", content: buildPrompt(top, dateStr) },
-        ],
-      }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!res.ok) {
-      debug?.(`groq http ${res.status}`);
-      return null;
-    }
-    const json = await res.json();
-    const text: string | undefined = json?.choices?.[0]?.message?.content;
-    if (!text || !text.trim()) {
-      debug?.("groq empty content");
-      return null;
-    }
-
-    const { summary, actions, zones } = parseVerdict(text);
-    const fb = fallback(top, dateStr);
-    return {
-      summary: summary || fb.summary,
-      actions: actions.length ? actions : fb.actions,
-      riskZones: zones.length ? zones : fb.riskZones,
-    };
-  } catch (e) {
-    debug?.(`groq call failed: ${String(e)}`);
-    return null;
-  }
 }
 
 async function askGemini(
@@ -200,19 +133,9 @@ export async function getAiAssessment(
   debug?: (m: string) => void
 ): Promise<{
   assessment: AIAssessment;
-  provider: "groq" | "gemini" | "deterministic";
+  provider: "gemini" | "deterministic";
 }> {
-  const provider = process.env.AI_PROVIDER;
-
-  if (provider === "groq" || (provider !== "gemini" && process.env.GROQ_API_KEY)) {
-    const groq = await askGroq(top, debug);
-    if (groq) {
-      debug?.(`groq OK, model=${process.env.GROQ_MODEL || "openai/gpt-oss-120b"}`);
-      return { assessment: groq, provider: "groq" };
-    }
-  }
-
-  if (provider === "gemini" || (provider !== "groq" && process.env.GEMINI_API_KEY)) {
+  if ((process.env.AI_PROVIDER !== "deterministic") && process.env.GEMINI_API_KEY) {
     const gemini = await askGemini(top, debug);
     if (gemini) return { assessment: gemini, provider: "gemini" };
   }
