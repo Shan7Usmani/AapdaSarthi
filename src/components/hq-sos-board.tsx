@@ -19,36 +19,58 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, timeAgo } from "@/lib/utils";
 
+const SOS_STATUS = {
+  open: {
+    cls: "border-danger/40 bg-danger/5",
+    icon: "text-danger",
+    dot: "bg-danger live-dot",
+    label: "LIVE SOS",
+    labelCls: "text-danger",
+  },
+  claimed: {
+    cls: "border-warn/40 bg-warn/5",
+    icon: "text-warn",
+    dot: "bg-warn",
+    label: "TAKEN CONTROL",
+    labelCls: "text-warn",
+  },
+  reached: {
+    cls: "border-cyan/40 bg-cyan/5",
+    icon: "text-cyan",
+    dot: "bg-cyan",
+    label: "ON SITE",
+    labelCls: "text-cyan",
+  },
+  delivered: {
+    cls: "border-border bg-panel-2/60 opacity-70",
+    icon: "text-muted",
+    dot: "bg-muted",
+    label: "DELIVERED",
+    labelCls: "text-muted",
+  },
+} as const;
+
 function SosCard({ s }: { s: SosItem }) {
+  const st = SOS_STATUS[s.status] ?? SOS_STATUS.open;
   return (
-    <div
-      className={cn(
-        "flex items-start gap-2.5 rounded-md border px-3 py-2",
-        s.status === "open"
-          ? "border-danger/40 bg-danger/5"
-          : s.status === "claimed"
-            ? "border-warn/40 bg-warn/5"
-            : "border-border bg-panel-2/60 opacity-70"
-      )}
-    >
+    <div className={cn("flex items-start gap-2.5 rounded-md border px-3 py-2", st.cls)}>
       <div className="mt-0.5 flex flex-col items-center gap-1">
-        <Siren
-          className={cn(
-            "h-4 w-4",
-            s.status === "open" ? "text-danger" : s.status === "claimed" ? "text-warn" : "text-muted"
-          )}
-        />
-        <span
-          className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            s.status === "open" ? "bg-danger live-dot" : s.status === "claimed" ? "bg-warn" : "bg-muted"
-          )}
-        />
+        <Siren className={cn("h-4 w-4", st.icon)} />
+        <span className={cn("h-1.5 w-1.5 rounded-full", st.dot)} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[12px] font-medium">{s.citizenName}</span>
           <span className="shrink-0 font-mono text-[9px] text-muted">{timeAgo(s.timestamp)}</span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[9px]">
+          <span className={cn("uppercase tracking-wider", st.labelCls)}>{st.label}</span>
+          {s.status !== "open" && s.rescuerName && (
+            <span className="truncate text-muted">· {s.rescuerName}</span>
+          )}
+          {s.status === "delivered" && s.deliveredAt && (
+            <span className="text-muted">· {timeAgo(s.deliveredAt)}</span>
+          )}
         </div>
         <p className="mt-0.5 line-clamp-1 text-[11px] text-muted">{s.message}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[9px] text-muted">
@@ -61,8 +83,10 @@ function SosCard({ s }: { s: SosItem }) {
               {s.location.lat.toFixed(3)}, {s.location.lng.toFixed(3)}
             </span>
           )}
-          {s.rescuerName && (
-            <span className="flex items-center gap-1 text-warn">rescuer: {s.rescuerName}</span>
+          {s.status === "delivered" && (
+            <span className="flex items-center gap-1 text-safe">
+              <CheckCircle2 className="h-2.5 w-2.5" /> item delivered
+            </span>
           )}
           {s.nearestRescuerName && !s.rescuerName && (
             <span className="flex items-center gap-1 text-cyan">
@@ -147,7 +171,8 @@ export function HqSosBoard() {
   const validSos = sos.filter((s) => s && typeof s.timestamp === "string");
   const latest = [...validSos].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 6);
   const openCount = validSos.filter((s) => s.status === "open").length;
-  const claimedCount = validSos.filter((s) => s.status === "claimed").length;
+  const inFieldCount = validSos.filter((s) => s.status === "claimed" || s.status === "reached").length;
+  const deliveredCount = validSos.filter((s) => s.status === "delivered").length;
   const pendingRequests = requests.filter((r) => r && r.status === "pending").length;
   const teamsOnline = rescuers.filter((r) => r.online).length;
   const requestsSorted = [...requests]
@@ -165,7 +190,10 @@ export function HqSosBoard() {
             {openCount} open
           </Badge>
           <Badge className="!text-[9px] text-warn border-warn/40 bg-warn/10">
-            {claimedCount} active
+            {inFieldCount} in field
+          </Badge>
+          <Badge className="!text-[9px] text-safe border-safe/40 bg-safe/10">
+            {deliveredCount} delivered
           </Badge>
           <Badge className="!text-[9px] text-cyan border-cyan/40 bg-cyan/10">
             <Radio className="h-2.5 w-2.5" /> {teamsOnline} online

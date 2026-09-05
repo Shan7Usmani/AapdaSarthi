@@ -44,8 +44,11 @@ export interface SosItem {
   location?: { lat: number; lng: number; accuracy?: number };
   media: MediaAttachment[];
   timestamp: string;
-  status: "open" | "claimed" | "resolved";
+  updatedAt?: string;
+  status: "open" | "claimed" | "reached" | "delivered";
   rescuerName?: string;
+  reachedAt?: string;
+  deliveredAt?: string;
   // nearest-rescuer routing (computed when the citizen sends the SOS)
   nearestRescuerName?: string;
   nearestDistanceKm?: number;
@@ -62,6 +65,7 @@ export interface ResourceRequest {
   foodkits: number;
   transports: number;
   timestamp: string;
+  updatedAt?: string;
   status: "pending" | "fulfilled";
 }
 
@@ -76,9 +80,14 @@ interface SosState {
   setRescuerOnline: (id: string, online: boolean) => void;
   unregisterRescuer: (id: string) => void;
   addSos: (s: Omit<SosItem, "id" | "timestamp" | "status">) => string;
-  claimSos: (id: string) => void;
-  resolveSos: (id: string) => void;
+claimSos: (id: string) => void;
+  markReached: (id: string) => void;
+  markDelivered: (id: string) => void;
   addRequest: (r: Omit<ResourceRequest, "id" | "timestamp" | "status">) => void;
+  updateRequest: (
+    id: string,
+    patch: Partial<Omit<ResourceRequest, "id" | "timestamp" | "rescuerName" | "sosId">>
+  ) => void;
   fulfillRequest: (id: string) => void;
   seedOnce: () => void;
   resetDemo: () => void;
@@ -138,10 +147,12 @@ export const useSosStore = create<SosState>()(
         set({ rescuers: get().rescuers.filter((r) => r.id !== id) }),
       addSos: (s) => {
         const id = nextId("sos");
+        const now = new Date().toISOString();
         const item: SosItem = {
           ...s,
           id,
-          timestamp: new Date().toISOString(),
+          timestamp: now,
+          updatedAt: now,
           status: "open",
         };
         // Route to the nearest online rescuer when a live location is provided.
@@ -161,22 +172,58 @@ export const useSosStore = create<SosState>()(
       },
       claimSos: (id) =>
         set({
-          sos: get().sos.map((s) =>
-            s.id === id ? { ...s, status: "claimed", rescuerName: get().rescuerName || "Rescuer" } : s
-          ),
+          sos: get().sos.map((s) => {
+            if (s.id !== id) return s;
+            return {
+              ...s,
+              status: "claimed",
+              rescuerName: get().rescuerName || "Rescuer",
+              updatedAt: new Date().toISOString(),
+            };
+          }),
         }),
-      resolveSos: (id) =>
-        set({ sos: get().sos.map((s) => (s.id === id ? { ...s, status: "resolved" } : s)) }),
-      addRequest: (r) =>
+      markReached: (id) =>
+        set({
+          sos: get().sos.map((s) => {
+            if (s.id !== id) return s;
+            const now = new Date().toISOString();
+            return { ...s, status: "reached", reachedAt: now, updatedAt: now };
+          }),
+        }),
+      markDelivered: (id) =>
+        set({
+          sos: get().sos.map((s) => {
+            if (s.id !== id) return s;
+            const now = new Date().toISOString();
+            return { ...s, status: "delivered", deliveredAt: now, updatedAt: now };
+          }),
+        }),
+addRequest: (r) =>
         set({
           requests: [
-            { ...r, id: nextId("req"), timestamp: new Date().toISOString(), status: "pending" },
+            {
+              ...r,
+              id: nextId("req"),
+              timestamp: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              status: "pending",
+            },
             ...get().requests,
           ],
         }),
+      updateRequest: (id, patch) =>
+        set({
+          requests: get().requests.map((r) =>
+            r.id === id
+              ? { ...r, ...patch, updatedAt: new Date().toISOString(), status: "pending" }
+              : r
+          ),
+        }),
       fulfillRequest: (id) =>
         set({
-          requests: get().requests.map((r) => (r.id === id ? { ...r, status: "fulfilled" } : r)),
+          requests: get().requests.map((r) =>
+            r.id === id ? { ...r, status: "fulfilled", updatedAt: new Date().toISOString() } : r
+          ),
         }),
       seedOnce: () => {
         if (seedDone || get().sos.length > 0) return;
@@ -218,7 +265,8 @@ export const useSosStore = create<SosState>()(
           lng: number,
           minsAgo: number,
           status: SosItem["status"] = "open",
-          rescuerName?: string
+          rescuerName?: string,
+          extra: Partial<SosItem> = {}
         ): SosItem => ({
           id,
           citizenName,
@@ -229,6 +277,7 @@ export const useSosStore = create<SosState>()(
           timestamp: iso(minsAgo),
           status,
           rescuerName,
+          ...extra,
         });
         const seedSos: SosItem[] = [
           mk(
@@ -256,8 +305,9 @@ export const useSosStore = create<SosState>()(
             17,
             27.5910, 94.7594,
             47,
-            "resolved",
-            "NDRF Alpha"
+            "delivered",
+            "NDRF Alpha",
+            { deliveredAt: iso(44) }
           ),
           mk(
             "sos-seed-4",
@@ -265,7 +315,10 @@ export const useSosStore = create<SosState>()(
             "Flood water inside home, baby has fever. We need food and medical help as soon as possible.",
             6,
             26.1022, 91.4778,
-            95
+            95,
+            "reached",
+            "SDRF Team 4",
+            { reachedAt: iso(90) }
           ),
           mk(
             "sos-seed-5",
@@ -329,6 +382,20 @@ export const useSosStore = create<SosState>()(
     {
       name: "aapdasarthi-sos",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      // v1: map legacy "resolved" → "delivered" so old persisted demo data
+      // renders in the 4-stage lifecycle (open → claimed → reached → delivered).
+      migrate: (persistedState, version) => {
+        const state = persistedState as Partial<SosState> | undefined;
+        if (state && version < 1 && Array.isArray(state.sos)) {
+          state.sos = state.sos.map((s) =>
+            s && (s.status as string) === "resolved"
+              ? { ...s, status: "delivered", deliveredAt: s.deliveredAt ?? new Date().toISOString() }
+              : s
+          );
+        }
+        return state as SosState;
+      },
     }
   )
 );

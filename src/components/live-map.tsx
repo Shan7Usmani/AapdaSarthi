@@ -504,7 +504,7 @@ export function LiveMap() {
         </div>
         <div className="mt-1 font-mono text-[10px] text-danger">
           <span className="text-muted">LIVE SOS:</span> {live.openCount} open ·{" "}
-          {live.claimedCount} claimed
+          {live.claimedCount} in the field
         </div>
       </div>
 

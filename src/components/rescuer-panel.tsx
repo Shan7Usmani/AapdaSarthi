@@ -47,7 +47,7 @@ function MediaChips({ sos }: { sos: SosItem }) {
 }
 
 export function RescuerPanel() {
-  const { sos, requests, rescuerName, setRescuerName, claimSos, resolveSos, addRequest, registerRescuer, rescuers } =
+  const { sos, requests, rescuerName, setRescuerName, claimSos, markReached, markDelivered, addRequest, updateRequest, registerRescuer, rescuers } =
     useSosStore();
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
@@ -112,28 +112,49 @@ export function RescuerPanel() {
   const myRescues = useMemo(
     () =>
       sos
-        .filter((s) => s.status === "claimed" && s.rescuerName === rescuerName)
+        .filter(
+          (s) =>
+            (s.status === "claimed" || s.status === "reached" || s.status === "delivered") &&
+            s.rescuerName === rescuerName
+        )
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
     [sos, rescuerName]
   );
 
   const submitRequest = (sosId: string) => {
     const item = sos.find((s) => s.id === sosId);
-    addRequest({
-      sosId,
-      rescuerName: rescuerName || "Rescuer",
+    const existing = requests.find((r) => r.sosId === sosId && r.status === "pending");
+    const payload = {
       location: item?.location,
-      locationLabel: item ? `${item.location?.lat.toFixed(3)}, ${item.location?.lng.toFixed(3)}` : undefined,
+      locationLabel: item
+        ? `${item.location?.lat.toFixed(3)}, ${item.location?.lng.toFixed(3)}`
+        : undefined,
       peopleRescued,
       medkits,
       foodkits,
       transports,
-    });
+    };
+    if (existing) {
+      updateRequest(existing.id, payload);
+    } else {
+      addRequest({ sosId, rescuerName: rescuerName || "Rescuer", ...payload });
+    }
     setFormFor(null);
     setMedkits(0);
     setFoodkits(0);
     setTransports(0);
     setPeopleRescued(1);
+  };
+
+  const openForm = (s: SosItem) => {
+    const existing = requests.find((r) => r.sosId === s.id && r.status === "pending");
+    if (existing) {
+      setPeopleRescued(existing.peopleRescued);
+      setMedkits(existing.medkits);
+      setFoodkits(existing.foodkits);
+      setTransports(existing.transports);
+    }
+    setFormFor(s.id);
   };
 
   const pendingRequests = requests.filter((r) => r.status === "pending").length;
@@ -332,82 +353,114 @@ export function RescuerPanel() {
               </CardContent>
             </Card>
           )}
-          {myRescues.map((s) => (
-            <Card key={s.id} className="border-warn/40">
-              <CardHeader>
-                <span className="flex items-center gap-1.5 font-mono text-[10px] text-warn">
-                  <Clock3 className="h-3 w-3" /> TAKEN CONTROL · {s.citizenName}
-                </span>
-                <Badge severity="HIGH">In progress</Badge>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2.5">
-                <p className="text-[12px] leading-relaxed text-foreground/90">{s.message}</p>
-                <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] text-muted">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3 text-warn" /> {s.peopleCount} people
+          {myRescues.map((s) => {
+            const isReached = s.status === "reached";
+            const isDelivered = s.status === "delivered";
+            const st = isDelivered
+              ? { label: "DELIVERED", cls: "text-safe", ring: "border-safe/40", Icon: CheckCircle2 }
+              : isReached
+                ? { label: "ON SITE", cls: "text-cyan", ring: "border-cyan/40", Icon: MapPin }
+                : { label: "TAKEN CONTROL", cls: "text-warn", ring: "border-warn/40", Icon: Clock3 };
+            const StatusIcon = st.Icon;
+            return (
+              <Card key={s.id} className={cn(st.ring, isDelivered && "opacity-70")}>
+                <CardHeader>
+                  <span className={cn("flex items-center gap-1.5 font-mono text-[10px]", st.cls)}>
+                    <StatusIcon className="h-3 w-3" /> {st.label} · {s.citizenName}
                   </span>
-                  <MediaChips sos={s} />
-                </div>
-                {formFor === s.id ? (
-                  <div className="flex flex-col gap-2 rounded-md border border-warn/40 bg-warn/5 p-3">
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-warn">
-                      <Package className="h-3 w-3" /> Request resources from HQ
+                  <Badge severity={isDelivered ? "LOW" : isReached ? "MODERATE" : "HIGH"}>
+                    {isDelivered ? "Delivered" : isReached ? "On site" : "In progress"}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2.5">
+                  <p className="text-[12px] leading-relaxed text-foreground/90">{s.message}</p>
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] text-muted">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3 text-warn" /> {s.peopleCount} people
+                    </span>
+                    <MediaChips sos={s} />
+                  </div>
+
+                  {isDelivered ? (
+                    <p className="flex items-center gap-1 font-mono text-[10px] text-safe">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Item delivered {s.deliveredAt ? timeAgo(s.deliveredAt) : "to citizen"}
+                    </p>
+                  ) : formFor === s.id ? (
+                    <div className="flex flex-col gap-2 rounded-md border border-warn/40 bg-warn/5 p-3">
+                      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-warn">
+                        <Package className="h-3 w-3" />{" "}
+                        {isReached ? "Update resources required" : "Request resources from HQ"}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(
+                          [
+                            ["peopleRescued", "People rescued", setPeopleRescued, peopleRescued],
+                            ["medkits", "Medkits", setMedkits, medkits],
+                            ["foodkits", "Food kits", setFoodkits, foodkits],
+                            ["transports", "Transports", setTransports, transports],
+                          ] as const
+                        ).map(([_, label, setter, val]) => (
+                          <div key={_}>
+                            <label className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-muted">
+                              {label}
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={val}
+                              onChange={(e) => setter(Math.max(0, Number(e.target.value)))}
+                              className="w-full rounded-md border border-border-strong bg-slate-50 px-2.5 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="primary" size="md" className="flex-1" onClick={() => submitRequest(s.id)}>
+                          <Send className="h-3.5 w-3.5" /> {isReached ? "Update HQ" : "Send to HQ"}
+                        </Button>
+                        <Button variant="ghost" size="md" onClick={() => setFormFor(null)}>
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(
-                        [
-                          ["peopleRescued", "People rescued", setPeopleRescued, peopleRescued],
-                          ["medkits", "Medkits", setMedkits, medkits],
-                          ["foodkits", "Food kits", setFoodkits, foodkits],
-                          ["transports", "Transports", setTransports, transports],
-                        ] as const
-                      ).map(([_, label, setter, val]) => (
-                        <div key={_}>
-                          <label className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-muted">
-                            {label}
-                          </label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={val}
-                            onChange={(e) => setter(Math.max(0, Number(e.target.value)))}
-                            className="w-full rounded-md border border-border-strong bg-slate-50 px-2.5 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                  ) : (
                     <div className="flex gap-2">
-                      <Button variant="primary" size="md" className="flex-1" onClick={() => submitRequest(s.id)}>
-                        <Send className="h-3.5 w-3.5" /> Send to HQ
-                      </Button>
-                      <Button variant="ghost" size="md" onClick={() => setFormFor(null)}>
-                        Cancel
-                      </Button>
+                      {isReached ? (
+                        <>
+                          <Button
+                            variant="primary"
+                            size="md"
+                            className="flex-1"
+                            onClick={() => markDelivered(s.id)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Deliver item
+                          </Button>
+                          <Button variant="outline" size="md" onClick={() => openForm(s)}>
+                            <Package className="h-3.5 w-3.5" /> Update resources required
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="primary"
+                            size="md"
+                            className="flex-1"
+                            onClick={() => markReached(s.id)}
+                          >
+                            <Navigation className="h-3.5 w-3.5" /> I have reached the location
+                          </Button>
+                          <Button variant="outline" size="md" onClick={() => openForm(s)}>
+                            <Package className="h-3.5 w-3.5" /> Request resources
+                          </Button>
+                        </>
+                      )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="primary"
-                      size="md"
-                      className="flex-1"
-                      onClick={() => setFormFor(s.id)}
-                    >
-                      <Package className="h-3.5 w-3.5" /> Request resources
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="md"
-                      onClick={() => resolveSos(s.id)}
-                      title="Mark resolved"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ import { useSosStore, type SosItem, type Rescuer, type ResourceRequest } from "@
  */
 
 export type RiskLevel = "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
+const ACTIVE_SOS_STATUSES = new Set(["claimed", "reached", "delivered"]);
 
 export interface RegionCluster {
   key: string;
@@ -61,7 +62,7 @@ export function deriveLiveStats(
   rescuers: Rescuer[]
 ): LiveStats {
   const openSignals = sos.filter((s) => s && s.status === "open");
-  const claimedSignals = sos.filter((s) => s && s.status === "claimed");
+  const claimedSignals = sos.filter((s) => s && ACTIVE_SOS_STATUSES.has(s.status));
   const totalPeople = openSignals.reduce((a, s) => a + (Number(s.peopleCount) || 0), 0);
 
   // Cluster open signals into "risk zones" by ~0.1° grid cell.

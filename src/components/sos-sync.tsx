@@ -141,13 +141,16 @@ export function SosSync() {
       if (disposed) return;
 
       const { sos, requests, rescuers } = useSosStore.getState();
-      const merge = <T extends { id: string; timestamp: string }>(local: T[], remote: T[]): T[] => {
+      const stampOf = <T extends { timestamp: string; updatedAt?: string }>(row: T) =>
+        String(row.updatedAt || row.timestamp);
+      const merge = <T extends { id: string; timestamp: string; updatedAt?: string }>(local: T[], remote: T[]): T[] => {
         const map = new Map(local.map((x) => [x.id, x]));
         for (const r of remote) {
           const existing = map.get(r.id);
-          // remote wins on timestamp order (latest).
+          // remote wins when its latest edit is newer; older rows without
+          // updatedAt still compare by their original timestamp.
           if (!existing) map.set(r.id, r);
-          else if (String(existing.timestamp) < String(r.timestamp)) map.set(r.id, r);
+          else if (stampOf(existing) < stampOf(r)) map.set(r.id, r);
         }
         return Array.from(map.values()).sort(
           (a, b) => String(b.timestamp).localeCompare(String(a.timestamp))
@@ -183,7 +186,9 @@ export function SosSync() {
           // plays the change straight back. If the timestamp is unchanged it's
           // our own echo — ignoring it breaks the write-up → echo-down loop
           // that was making lists re-order and jitter endlessly.
-          if (existing && String(existing.timestamp) === String(row.data.timestamp)) return;
+          const existingStamp = existing?.updatedAt || existing?.timestamp;
+          const incomingStamp = row.data.updatedAt || row.data.timestamp;
+          if (existing && String(existingStamp) === String(incomingStamp)) return;
           const next = cur.sos.filter((s) => s.id !== row.id);
           useSosStore.setState({ sos: [row.data, ...next] });
         }
@@ -196,7 +201,9 @@ export function SosSync() {
           if (!row || !row.data || typeof row.data.timestamp !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.requests.find((r) => r.id === row.id);
-          if (existing && String(existing.timestamp) === String(row.data.timestamp)) return;
+          const existingStamp = existing?.updatedAt || existing?.timestamp;
+          const incomingStamp = row.data.updatedAt || row.data.timestamp;
+          if (existing && String(existingStamp) === String(incomingStamp)) return;
           const next = cur.requests.filter((r) => r.id !== row.id);
           useSosStore.setState({ requests: [row.data, ...next] });
         }
