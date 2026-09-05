@@ -69,17 +69,6 @@ export function RescuerPanel() {
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
 
-  // Real SMS to the citizen works from the phone (installed PWA or a mobile
-  // browser tab — both support sms: URIs). Pressing Take control hands over
-  // to the phone's native SMS app automatically; the button below is the
-  // manual fallback. On desktop the SMS app can't open, so both stay hidden.
-  const [canSms, setCanSms] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setCanSms(canLaunchSms()), 0);
-    return () => clearTimeout(t);
-  }, []);
-
-  // request form state
   const [formFor, setFormFor] = useState<string | null>(null);
   const [peopleRescued, setPeopleRescued] = useState(1);
   const [medkits, setMedkits] = useState(0);
@@ -183,10 +172,10 @@ const takeControl = (sosId: string) => {
     setFormFor(null);
     setTab("rescues");
     // The claim is live on HQ instantly (claimSos auto-logs the SIMULATED
-    // confirmation to the citizen's inbox + HQ panel). On a phone we ALSO
-    // hand over to the native SMS app right now, pre-filled to the person in
-    // trouble, so the confirmation physically goes out in the same tap.
-    if (canSms) {
+    // confirmation to the citizen's inbox + HQ panel). On anything that can
+    // send SMS (phone browser OR installed PWA) we ALSO hand over to the
+    // native SMS app right now, pre-filled to the person in trouble.
+    if (canLaunchSms()) {
       const target = sos.find((s) => s.id === sosId);
       const uri = target ? smsUriFor(target, "claimed", rescuerName.trim() || "Rescuer") : null;
       if (uri) {
@@ -479,8 +468,7 @@ const takeControl = (sosId: string) => {
 </div>
                   )}
 
-                  {canSms &&
-                    smsUriFor(
+                  {smsUriFor(
                       s,
                       isDelivered ? "delivered" : isReached ? "reached" : "claimed",
                       rescuerName.trim() || "your rescue team"
