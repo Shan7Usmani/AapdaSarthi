@@ -19,6 +19,7 @@ import {
   Clock3,
 } from "lucide-react";
 import { useSosStore, type SosItem } from "@/store/sos-store";
+import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +48,7 @@ function MediaChips({ sos }: { sos: SosItem }) {
 }
 
 export function RescuerPanel() {
-  const { sos, requests, rescuerName, setRescuerName, claimSos, markReached, markDelivered, addRequest, updateRequest, registerRescuer, rescuers } =
+  const { sos, requests, rescuerName, setRescuerName, claimSos, markReached, markDelivered, addUpdate, addRequest, updateRequest, registerRescuer, rescuers } =
     useSosStore();
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
@@ -110,14 +111,16 @@ export function RescuerPanel() {
   );
 
   const myRescues = useMemo(
-    () =>
-      sos
+    () => {
+      const mine = rescuerName.trim().toLowerCase() || "rescuer";
+      return sos
         .filter(
           (s) =>
             (s.status === "claimed" || s.status === "reached" || s.status === "delivered") &&
-            s.rescuerName?.trim().toLowerCase() === rescuerName.trim().toLowerCase()
+            s.rescuerName?.trim().toLowerCase() === mine
         )
-        .sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+        .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    },
     [sos, rescuerName]
   );
 
@@ -471,6 +474,12 @@ export function RescuerPanel() {
                       )}
                     </div>
                   )}
+
+                  <SosUpdates
+                    sos={s}
+                    onPost={(text) => addUpdate(s.id, text, "rescuer")}
+                    placeholder="Post ground info for HQ…"
+                  />
                 </CardContent>
               </Card>
             );

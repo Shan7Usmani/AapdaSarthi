@@ -14,6 +14,7 @@ import {
   Radio,
 } from "lucide-react";
 import { useSosStore, type ResourceRequest, type SosItem } from "@/store/sos-store";
+import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +55,7 @@ function updatedStamp(item: { timestamp: string; updatedAt?: string }) {
   return item.updatedAt || item.timestamp;
 }
 
-function SosCard({ s }: { s: SosItem }) {
+function SosCard({ s, onUpdate }: { s: SosItem; onUpdate: (id: string, text: string) => void }) {
   const st = SOS_STATUS[s.status] ?? SOS_STATUS.open;
   return (
     <div className={cn("flex items-start gap-2.5 rounded-md border px-3 py-2", st.cls)}>
@@ -103,6 +104,13 @@ function SosCard({ s }: { s: SosItem }) {
               {s.nearestDistanceKm !== undefined ? ` · ${s.nearestDistanceKm}km` : ""}
             </span>
           )}
+        </div>
+        <div className="mt-1.5">
+          <SosUpdates
+            sos={s}
+            onPost={(text) => onUpdate(s.id, text)}
+            placeholder="HQ advisory / dispatch note…"
+          />
         </div>
       </div>
     </div>
@@ -176,7 +184,7 @@ function RequestCard({
 }
 
 export function HqSosBoard() {
-  const { sos, requests, rescuers, fulfillRequest, resetDemo } = useSosStore();
+  const { sos, requests, rescuers, fulfillRequest, addUpdate, resetDemo } = useSosStore();
   const validSos = sos.filter((s) => s && typeof s.timestamp === "string");
   const latest = [...validSos].sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a))).slice(0, 6);
   const openCount = validSos.filter((s) => s.status === "open").length;
@@ -231,7 +239,7 @@ export function HqSosBoard() {
           ) : (
             <div className="flex flex-col gap-1.5">
               {latest.map((s) => (
-                <SosCard key={s.id} s={s} />
+                <SosCard key={s.id} s={s} onUpdate={(id, text) => addUpdate(id, text, "hq")} />
               ))}
             </div>
           )}

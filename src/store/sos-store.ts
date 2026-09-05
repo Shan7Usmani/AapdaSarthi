@@ -36,6 +36,14 @@ export interface Rescuer {
   lastSeen: string;
 }
 
+export interface SosUpdate {
+  id: string;
+  by: string;
+  role: "rescuer" | "hq";
+  text: string;
+  at: string;
+}
+
 export interface SosItem {
   id: string;
   citizenName: string;
@@ -49,6 +57,9 @@ export interface SosItem {
   rescuerName?: string;
   reachedAt?: string;
   deliveredAt?: string;
+  // live ground-info thread, appended to by the rescuer OR HQ as the
+  // situation on the ground changes (rides the same sync path as the SOS)
+  updates?: SosUpdate[];
   // nearest-rescuer routing (computed when the citizen sends the SOS)
   nearestRescuerName?: string;
   nearestDistanceKm?: number;
@@ -80,9 +91,10 @@ interface SosState {
   setRescuerOnline: (id: string, online: boolean) => void;
   unregisterRescuer: (id: string) => void;
   addSos: (s: Omit<SosItem, "id" | "timestamp" | "status">) => string;
-  claimSos: (id: string) => void;
+claimSos: (id: string) => void;
   markReached: (id: string) => void;
   markDelivered: (id: string) => void;
+  addUpdate: (id: string, text: string, role: SosUpdate["role"]) => void;
   addRequest: (r: Omit<ResourceRequest, "id" | "timestamp" | "status">) => void;
   updateRequest: (
     id: string,
@@ -190,12 +202,30 @@ export const useSosStore = create<SosState>()(
             return { ...s, status: "reached", reachedAt: now, updatedAt: now };
           }),
         }),
-      markDelivered: (id) =>
+markDelivered: (id) =>
         set({
           sos: get().sos.map((s) => {
             if (s.id !== id) return s;
             const now = new Date().toISOString();
             return { ...s, status: "delivered", deliveredAt: now, updatedAt: now };
+          }),
+        }),
+      addUpdate: (id, text, role) =>
+        set({
+          sos: get().sos.map((s) => {
+            if (s.id !== id) return s;
+            const now = new Date().toISOString();
+            const by =
+              role === "hq" ? "HQ" : (get().rescuerName || "").trim() || "Rescuer";
+            const updates = s.updates ?? [];
+            return {
+              ...s,
+              updates: [
+                ...updates,
+                { id: `${s.id}-u${Date.now()}`, by, role, text: text.trim(), at: now },
+              ],
+              updatedAt: now,
+            };
           }),
         }),
       addRequest: (r) =>
@@ -296,7 +326,25 @@ export const useSosStore = create<SosState>()(
             26.4512, 90.9961,
             22,
             "claimed",
-            "SDRF Team 4"
+            "SDRF Team 4",
+            {
+              updates: [
+                {
+                  id: "u-seed-2-a",
+                  by: "SDRF Team 4",
+                  role: "rescuer",
+                  text: "On route — water is chest-deep near the market, need the boat crew.",
+                  at: iso(20),
+                },
+                {
+                  id: "u-seed-2-b",
+                  by: "HQ",
+                  role: "hq",
+                  text: "Medkits + 2 life jackets dispatched. ETA 12 min.",
+                  at: iso(14),
+                },
+              ],
+            }
           ),
           mk(
             "sos-seed-3",
@@ -307,7 +355,25 @@ export const useSosStore = create<SosState>()(
             47,
             "delivered",
             "NDRF Alpha",
-            { deliveredAt: iso(44) }
+            {
+              deliveredAt: iso(44),
+              updates: [
+                {
+                  id: "u-seed-3-a",
+                  by: "NDRF Alpha",
+                  role: "rescuer",
+                  text: "Water receding here — campsite walkable now.",
+                  at: iso(46),
+                },
+                {
+                  id: "u-seed-3-b",
+                  by: "HQ",
+                  role: "hq",
+                  text: "Relief transport completed. 17 people safe at camp.",
+                  at: iso(44),
+                },
+              ],
+            }
           ),
           mk(
             "sos-seed-4",
@@ -318,7 +384,18 @@ export const useSosStore = create<SosState>()(
             95,
             "reached",
             "SDRF Team 4",
-            { reachedAt: iso(90) }
+            {
+              reachedAt: iso(90),
+              updates: [
+                {
+                  id: "u-seed-4-a",
+                  by: "SDRF Team 4",
+                  role: "rescuer",
+                  text: "Location reached. Baby’s fever stabilising — requesting a paramedic.",
+                  at: iso(88),
+                },
+              ],
+            }
           ),
           mk(
             "sos-seed-5",
