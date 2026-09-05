@@ -44,6 +44,23 @@ export interface SosUpdate {
   at: string;
 }
 
+/**
+ * Outbound message sent back to the citizen who raised the SOS.
+ * `to` is ALWAYS the number the citizen signalled from (captured in the SOS
+ * form — browsers cannot read a phone's MSISDN), so the command centre talks
+ * to exactly the same handset that contacted us.
+ */
+export interface CitizenMessage {
+  id: string;
+  sosId: string;
+  to: string;
+  citizenName: string;
+  stage: "ack" | "claimed" | "reached" | "delivered";
+  channel: "sms";
+  text: string;
+  at: string;
+}
+
 export interface SosItem {
   id: string;
   citizenName: string;
@@ -57,12 +74,63 @@ export interface SosItem {
   rescuerName?: string;
   reachedAt?: string;
   deliveredAt?: string;
+  // the number THIS SOS came from; every confirmation goes back here
+  citizenPhone?: string;
+  // outbound confirmations sent to that number (simulated until a paid
+  // gateway is configured) — rides the exact same sync path as the SOS row
+  citizenMsgs?: CitizenMessage[];
   // live ground-info thread, appended to by the rescuer OR HQ as the
   // situation on the ground changes (rides the same sync path as the SOS)
   updates?: SosUpdate[];
   // nearest-rescuer routing (computed when the citizen sends the SOS)
   nearestRescuerName?: string;
   nearestDistanceKm?: number;
+}
+
+/** +91 97749 22001 (accepts any indian 10-digit mobile, with/without 91) */
+export function formatCitizenPhone(raw: string): string {
+  let d = raw.replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("91")) d = d.slice(2);
+  if (d.length === 13 && d.startsWith("91")) d = d.slice(2);
+  if (d.length !== 10) return raw;
+  return `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
+}
+
+/** +91 •••• ••2001 — safe for crowded command-centre cards */
+export function maskCitizenPhone(phone?: string): string {
+  if (!phone) return "";
+  const d = phone.replace(/\D/g, "");
+  return `+91 •••• ••${d.slice(-4)}`;
+}
+
+/**
+ * Compose the confirmation SMS for a lifecycle stage. Returns null when the
+ * SOS carries no contact number (nothing to send back to).
+ */
+export function buildCitizenMsg(
+  s: SosItem,
+  stage: CitizenMessage["stage"],
+  by?: string
+): CitizenMessage | null {
+  if (!s.citizenPhone) return null;
+  const text =
+    stage === "ack"
+      ? `AapdaSaarthi: your signal was received. The command centre is tracking you — help is being coordinated. Stay reachable on this number.`
+      : stage === "claimed"
+        ? `AapdaSaarthi: ${by ?? "a rescue team"} has taken your request. Help is on the way to you now.`
+        : stage === "reached"
+          ? `AapdaSaarthi: ${by ?? "your rescue team"} is at your location. Follow their instructions.`
+          : `AapdaSaarthi: item delivered to ${s.citizenName}. You are in safe hands. — Command Centre`;
+  return {
+    id: `${s.id}-${stage}-${Date.now()}`,
+    sosId: s.id,
+    to: formatCitizenPhone(s.citizenPhone),
+    citizenName: s.citizenName,
+    stage,
+    channel: "sms",
+    text,
+    at: new Date().toISOString(),
+  };
 }
 
 export interface ResourceRequest {
@@ -163,7 +231,7 @@ export const useSosStore = create<SosState>()(
         }),
       unregisterRescuer: (id) =>
         set({ rescuers: get().rescuers.filter((r) => r.id !== id) }),
-      addSos: (s) => {
+addSos: (s) => {
         const id = nextId("sos");
         const now = new Date().toISOString();
         const item: SosItem = {
@@ -185,27 +253,43 @@ export const useSosStore = create<SosState>()(
             item.nearestDistanceKm = match.km;
           }
         }
+        // Acknowledge straight back to the number the signal came from.
+        const ack = buildCitizenMsg(item, "ack");
+        if (ack) item.citizenMsgs = [ack];
         set({ sos: [item, ...get().sos] });
         return id;
       },
-      claimSos: (id) =>
+      claimSos: (id) => {
+        const target = get().sos.find((t) => t.id === id);
+        const by = (get().rescuerName || "").trim() || "Rescuer";
+        const msg = target ? buildCitizenMsg(target, "claimed", by) : null;
         set({
           sos: get().sos.map((s) => {
             if (s.id !== id) return s;
+            const now = new Date().toISOString();
             return {
               ...s,
               status: "claimed",
-              rescuerName: (get().rescuerName || "").trim() || "Rescuer",
-              updatedAt: new Date().toISOString(),
+              rescuerName: by,
+              citizenMsgs: msg ? [...(s.citizenMsgs ?? []), msg] : s.citizenMsgs,
+              updatedAt: now,
             };
           }),
-        }),
+        });
+      },
       markReached: (id) =>
         set({
           sos: get().sos.map((s) => {
             if (s.id !== id) return s;
             const now = new Date().toISOString();
-            return { ...s, status: "reached", reachedAt: now, updatedAt: now };
+            const msg = buildCitizenMsg(s, "reached", s.rescuerName);
+            return {
+              ...s,
+              status: "reached",
+              reachedAt: now,
+              citizenMsgs: msg ? [...(s.citizenMsgs ?? []), msg] : s.citizenMsgs,
+              updatedAt: now,
+            };
           }),
         }),
       markDelivered: (id) =>
@@ -213,7 +297,14 @@ export const useSosStore = create<SosState>()(
           sos: get().sos.map((s) => {
             if (s.id !== id) return s;
             const now = new Date().toISOString();
-            return { ...s, status: "delivered", deliveredAt: now, updatedAt: now };
+            const msg = buildCitizenMsg(s, "delivered", s.rescuerName);
+            return {
+              ...s,
+              status: "delivered",
+              deliveredAt: now,
+              citizenMsgs: msg ? [...(s.citizenMsgs ?? []), msg] : s.citizenMsgs,
+              updatedAt: now,
+            };
           }),
         }),
       addUpdate: (id, text, role) =>
