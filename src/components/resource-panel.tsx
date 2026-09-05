@@ -46,7 +46,7 @@ export function ResourcePanel() {
       { icon: "med", label: "Medkits requested", ward: "pending requests", quantity: live.totalMedkits, unit: "kits", status: "requested" },
       { icon: "rations", label: "Food kits requested", ward: "pending requests", quantity: live.totalFoodkits, unit: "kits", status: "requested" },
       { icon: "boat", label: "Transports requested", ward: "pending requests", quantity: live.totalTransports, unit: "units", status: "requested" },
-      { icon: "shelter", label: "Fulfilled requests", ward: "people rescued", quantity: live.peopleRescued, unit: "people", status: "ready" },
+      { icon: "shelter", label: "Allocated resources", ward: "people reached", quantity: live.peopleRescued, unit: "people", status: "ready" },
     ];
     return (
       <Card className="h-full">
@@ -54,7 +54,7 @@ export function ResourcePanel() {
           <CardTitle className="flex items-center gap-1.5">
             Resource Allocation Engine <Radio className="h-3.5 w-3.5 text-cyan" />
           </CardTitle>
-          <span className="font-mono text-[10px] text-muted">live field requests · {live.fulfilledCount} fulfilled</span>
+          <span className="font-mono text-[10px] text-muted">live field requests · {live.fulfilledCount} allocated</span>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {resources.map((r) => {

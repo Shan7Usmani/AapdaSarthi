@@ -48,7 +48,21 @@ function MediaChips({ sos }: { sos: SosItem }) {
 }
 
 export function RescuerPanel() {
-  const { sos, requests, rescuerName, setRescuerName, claimSos, markReached, markDelivered, addUpdate, addRequest, updateRequest, registerRescuer, rescuers } =
+  const {
+    sos,
+    requests,
+    rescuerName,
+    setRescuerName,
+    claimSos,
+    markReached,
+    receiveRequest,
+    allocateRequest,
+    addUpdate,
+    addRequest,
+    updateRequest,
+    registerRescuer,
+    rescuers,
+  } =
     useSosStore();
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
@@ -126,7 +140,7 @@ export function RescuerPanel() {
 
   const submitRequest = (sosId: string) => {
     const item = sos.find((s) => s.id === sosId);
-    const existing = requests.find((r) => r.sosId === sosId && r.status === "pending");
+    const existing = requests.find((r) => r.sosId === sosId && r.status !== "allocated" && r.status !== "fulfilled");
     const payload = {
       location: item?.location,
       locationLabel: item
@@ -159,7 +173,7 @@ export function RescuerPanel() {
   };
 
   const openForm = (s: SosItem) => {
-    const existing = requests.find((r) => r.sosId === s.id && r.status === "pending");
+    const existing = requests.find((r) => r.sosId === s.id && r.status !== "allocated" && r.status !== "fulfilled");
     if (existing) {
       setPeopleRescued(existing.peopleRescued);
       setMedkits(existing.medkits);
@@ -367,6 +381,12 @@ export function RescuerPanel() {
           {myRescues.map((s) => {
             const isReached = s.status === "reached";
             const isDelivered = s.status === "delivered";
+            const activeRequest = requests.find(
+              (r) => r.sosId === s.id && r.status !== "allocated" && r.status !== "fulfilled"
+            );
+            const allocatedRequest = requests.find(
+              (r) => r.sosId === s.id && (r.status === "allocated" || r.status === "fulfilled")
+            );
             const st = isDelivered
               ? { label: "DELIVERED", cls: "text-safe", ring: "border-safe/40", Icon: CheckCircle2 }
               : isReached
@@ -395,8 +415,40 @@ export function RescuerPanel() {
                   {isDelivered && (
                     <p className="flex items-center gap-1 font-mono text-[10px] text-safe">
                       <CheckCircle2 className="h-3 w-3" />
-                      Item delivered {s.deliveredAt ? timeAgo(s.deliveredAt) : "to citizen"}
+                      Resources allocated {s.deliveredAt ? timeAgo(s.deliveredAt) : "to citizen"}
                     </p>
+                  )}
+
+                  {(activeRequest || allocatedRequest) && (
+                    <div className="rounded-md border border-border bg-panel-2/60 px-3 py-2 font-mono text-[10px] text-muted">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          Resources: medkits {activeRequest?.medkits ?? allocatedRequest?.medkits ?? 0},
+                          food {activeRequest?.foodkits ?? allocatedRequest?.foodkits ?? 0},
+                          transport {activeRequest?.transports ?? allocatedRequest?.transports ?? 0}
+                        </span>
+                        <Badge
+                          className={cn(
+                            "!text-[9px]",
+                            activeRequest?.status === "pending"
+                              ? "text-warn border-warn/40 bg-warn/10"
+                              : activeRequest?.status === "dispatched"
+                                ? "text-cyan border-cyan/40 bg-cyan/10"
+                                : activeRequest?.status === "received"
+                                  ? "text-orange-600 border-orange-300 bg-orange-50"
+                                  : "text-safe border-safe/40 bg-safe/10"
+                          )}
+                        >
+                          {activeRequest?.status === "pending"
+                            ? "pending at HQ"
+                            : activeRequest?.status === "dispatched"
+                              ? "dispatched"
+                              : activeRequest?.status === "received"
+                                ? "received"
+                                : "allocated"}
+                        </Badge>
+                      </div>
+                    </div>
                   )}
 
                   {formFor === s.id ? (
@@ -443,16 +495,31 @@ export function RescuerPanel() {
                         <Button variant="outline" size="md" className="flex-1" onClick={() => openForm(s)}>
                           <Package className="h-3.5 w-3.5" /> Update resources required
                         </Button>
+                      ) : activeRequest?.status === "dispatched" ? (
+                        <Button
+                          variant="primary"
+                          size="md"
+                          className="flex-1"
+                          onClick={() => receiveRequest(activeRequest.id)}
+                        >
+                          <Package className="h-3.5 w-3.5" /> Received resources at location
+                        </Button>
+                      ) : activeRequest?.status === "received" ? (
+                        <Button
+                          variant="primary"
+                          size="md"
+                          className="flex-1"
+                          onClick={() => allocateRequest(activeRequest.id)}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Delivered to citizen
+                        </Button>
                       ) : isReached ? (
                         <>
-                          <Button
-                            variant="primary"
-                            size="md"
-                            className="flex-1"
-                            onClick={() => markDelivered(s.id)}
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Deliver item
-                          </Button>
+                          {activeRequest?.status === "pending" ? (
+                            <Button variant="cyan" size="md" className="flex-1" disabled>
+                              <Package className="h-3.5 w-3.5" /> Awaiting HQ dispatch
+                            </Button>
+                          ) : null}
                           <Button variant="outline" size="md" onClick={() => openForm(s)}>
                             <Package className="h-3.5 w-3.5" /> Update resources required
                           </Button>

@@ -110,7 +110,9 @@ export function deriveLiveStats(
 
   const onlineTeams = rescuers.filter((r) => r && r.online);
   const pendingRequests = requests.filter((r) => r && r.status === "pending");
-  const fulfilledRequests = requests.filter((r) => r && r.status === "fulfilled");
+  const fulfilledRequests = requests.filter(
+    (r) => r && (r.status === "allocated" || r.status === "fulfilled")
+  );
 
   return {
     openSignals,

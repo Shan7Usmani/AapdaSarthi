@@ -77,7 +77,10 @@ export interface ResourceRequest {
   transports: number;
   timestamp: string;
   updatedAt?: string;
-  status: "pending" | "fulfilled";
+  dispatchedAt?: string;
+  receivedAt?: string;
+  allocatedAt?: string;
+  status: "pending" | "dispatched" | "received" | "allocated" | "fulfilled";
 }
 
 interface SosState {
@@ -91,7 +94,7 @@ interface SosState {
   setRescuerOnline: (id: string, online: boolean) => void;
   unregisterRescuer: (id: string) => void;
   addSos: (s: Omit<SosItem, "id" | "timestamp" | "status">) => string;
-claimSos: (id: string) => void;
+  claimSos: (id: string) => void;
   markReached: (id: string) => void;
   markDelivered: (id: string) => void;
   addUpdate: (id: string, text: string, role: SosUpdate["role"]) => void;
@@ -100,6 +103,9 @@ claimSos: (id: string) => void;
     id: string,
     patch: Partial<Omit<ResourceRequest, "id" | "timestamp" | "rescuerName" | "sosId">>
   ) => void;
+  dispatchRequest: (id: string) => void;
+  receiveRequest: (id: string) => void;
+  allocateRequest: (id: string) => void;
   fulfillRequest: (id: string) => void;
   seedOnce: () => void;
   resetDemo: () => void;
@@ -202,7 +208,7 @@ export const useSosStore = create<SosState>()(
             return { ...s, status: "reached", reachedAt: now, updatedAt: now };
           }),
         }),
-markDelivered: (id) =>
+      markDelivered: (id) =>
         set({
           sos: get().sos.map((s) => {
             if (s.id !== id) return s;
@@ -249,10 +255,43 @@ markDelivered: (id) =>
               : r
           ),
         }),
+      dispatchRequest: (id) =>
+        set({
+          requests: get().requests.map((r) => {
+            if (r.id !== id) return r;
+            const now = new Date().toISOString();
+            return { ...r, status: "dispatched", dispatchedAt: now, updatedAt: now };
+          }),
+        }),
+      receiveRequest: (id) =>
+        set({
+          requests: get().requests.map((r) => {
+            if (r.id !== id) return r;
+            const now = new Date().toISOString();
+            return { ...r, status: "received", receivedAt: now, updatedAt: now };
+          }),
+        }),
+      allocateRequest: (id) =>
+        set((state) => {
+          const now = new Date().toISOString();
+          const request = state.requests.find((r) => r.id === id);
+          return {
+            requests: state.requests.map((r) =>
+              r.id === id ? { ...r, status: "allocated", allocatedAt: now, updatedAt: now } : r
+            ),
+            sos: request?.sosId
+              ? state.sos.map((s) =>
+                  s.id === request.sosId
+                    ? { ...s, status: "delivered", deliveredAt: now, updatedAt: now }
+                    : s
+                )
+              : state.sos,
+          };
+        }),
       fulfillRequest: (id) =>
         set({
           requests: get().requests.map((r) =>
-            r.id === id ? { ...r, status: "fulfilled", updatedAt: new Date().toISOString() } : r
+            r.id === id ? { ...r, status: "allocated", updatedAt: new Date().toISOString() } : r
           ),
         }),
       seedOnce: () => {
@@ -432,7 +471,7 @@ markDelivered: (id) =>
             foodkits: 20,
             transports: 2,
             timestamp: iso(40),
-            status: "fulfilled",
+            status: "allocated",
           },
           {
             id: "req-seed-3",
