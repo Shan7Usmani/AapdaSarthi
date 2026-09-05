@@ -153,7 +153,11 @@ export function smsUriFor(s: SosItem, stage: CitizenMessage["stage"], by?: strin
   const digits = s.citizenPhone.replace(/\D/g, "");
   const e164 = digits.length === 10 ? `+91${digits}` : digits.length === 11 ? `+${digits}` : digits;
   if (!/^\+91\d{10}$/.test(e164)) return null;
-  return `sms:${encodeURIComponent(e164)}?body=${encodeURIComponent(citizenStageText(s, stage, by))}`;
+  // The recipient must NOT be percent-encoded (sms:%2B91… breaks the native
+  // SMS app's number parser). Android reads ?body=, iOS expects &body=.
+  const ios = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const sep = ios ? "&" : "?";
+  return `sms:${e164}${sep}body=${encodeURIComponent(citizenStageText(s, stage, by))}`;
 }
 
 export interface ResourceRequest {

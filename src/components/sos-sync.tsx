@@ -177,18 +177,18 @@ export function SosSync() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: TABLES.sos },
-        (payload) => {
+(payload) => {
           const row = payload.new as { id: string; data: SosItem } | null;
           if (!row || !row.data || typeof row.data.timestamp !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.sos.find((s) => s.id === row.id);
-          // Skip our own echoed write: when this device upserts, Realtime
-          // plays the change straight back. If the timestamp is unchanged it's
-          // our own echo — ignoring it breaks the write-up → echo-down loop
-          // that was making lists re-order and jitter endlessly.
           const existingStamp = existing?.updatedAt || existing?.timestamp;
           const incomingStamp = row.data.updatedAt || row.data.timestamp;
-          if (existing && String(existingStamp) === String(incomingStamp)) return;
+          // Last-write-wins: ignore our own echo (equal timestamp) AND any
+          // STALE row a slower device re-uploads (older timestamp). Without
+          // the freshness check an old "claimed" copy could overwrite a
+          // freshly "delivered" one and the card would visibly revert.
+          if (existing && String(existingStamp) >= String(incomingStamp)) return;
           const next = cur.sos.filter((s) => s.id !== row.id);
           useSosStore.setState({ sos: [row.data, ...next] });
         }
@@ -196,14 +196,14 @@ export function SosSync() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: TABLES.requests },
-        (payload) => {
+(payload) => {
           const row = payload.new as { id: string; data: ResourceRequest } | null;
           if (!row || !row.data || typeof row.data.timestamp !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.requests.find((r) => r.id === row.id);
           const existingStamp = existing?.updatedAt || existing?.timestamp;
           const incomingStamp = row.data.updatedAt || row.data.timestamp;
-          if (existing && String(existingStamp) === String(incomingStamp)) return;
+          if (existing && String(existingStamp) >= String(incomingStamp)) return;
           const next = cur.requests.filter((r) => r.id !== row.id);
           useSosStore.setState({ requests: [row.data, ...next] });
         }
@@ -216,7 +216,7 @@ export function SosSync() {
           if (!row || !row.data || typeof row.data.lastSeen !== "string") return;
           const cur = useSosStore.getState();
           const existing = cur.rescuers.find((r) => r.id === row.id);
-          if (existing && String(existing.lastSeen) === String(row.data.lastSeen)) return;
+          if (existing && String(existing.lastSeen) >= String(row.data.lastSeen)) return;
           const next = cur.rescuers.filter((r) => r.id !== row.id);
           useSosStore.setState({ rescuers: [row.data, ...next] });
         }

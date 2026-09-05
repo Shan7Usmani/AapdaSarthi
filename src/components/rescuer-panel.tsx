@@ -19,7 +19,7 @@ import {
   Clock3,
   Phone,
 } from "lucide-react";
-import { useSosStore, maskCitizenPhone, smsUriFor, type SosItem } from "@/store/sos-store";
+import { useSosStore, formatCitizenPhone, smsUriFor, type SosItem } from "@/store/sos-store";
 import { canLaunchSms } from "@/lib/pwa";
 import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -434,7 +434,7 @@ const takeControl = (sosId: string) => {
                     </span>
                     {s.citizenPhone && (
                       <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3 text-cyan" /> SMS → {maskCitizenPhone(s.citizenPhone)}
+                        <Phone className="h-3 w-3 text-cyan" /> SMS → {formatCitizenPhone(s.citizenPhone)}
                       </span>
                     )}
                     <MediaChips sos={s} />

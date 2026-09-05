@@ -14,7 +14,7 @@ import {
   Radio,
   Phone,
 } from "lucide-react";
-import { useSosStore, maskCitizenPhone, type ResourceRequest, type SosItem } from "@/store/sos-store";
+import { useSosStore, formatCitizenPhone, type ResourceRequest, type SosItem } from "@/store/sos-store";
 import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ function SosCard({ s, onUpdate }: { s: SosItem; onUpdate: (id: string, text: str
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[9px] text-muted">
           {s.citizenPhone && (
             <span className="flex items-center gap-1">
-              <Phone className="h-2.5 w-2.5" /> {maskCitizenPhone(s.citizenPhone)}
+              <Phone className="h-2.5 w-2.5" /> {formatCitizenPhone(s.citizenPhone)}
             </span>
           )}
           <span className="flex items-center gap-1">
