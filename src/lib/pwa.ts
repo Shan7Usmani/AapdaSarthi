@@ -19,3 +19,19 @@ export function isPwaInstalled(): boolean {
     navigator as Navigator & { standalone?: boolean }
   ).standalone;
 }
+
+/**
+ * True when the current device can actually hand over to a native SMS app
+ * via a sms: URI. This covers BOTH the installed PWA and any touch/mobile
+ * browser tab (mobile Chrome / iOS Safari both support sms: links). Only
+ * plain desktop browsers (no touch, no standalone) are excluded, because
+ * there sms: links usually do nothing.
+ */
+export function canLaunchSms(): boolean {
+  if (isPwaInstalled()) return true;
+  if (typeof window === "undefined") return false;
+  return (
+    "ontouchstart" in window ||
+    (typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 0)
+  );
+}

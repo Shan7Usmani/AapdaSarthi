@@ -20,7 +20,7 @@ import {
   Phone,
 } from "lucide-react";
 import { useSosStore, maskCitizenPhone, smsUriFor, type SosItem } from "@/store/sos-store";
-import { isPwaInstalled } from "@/lib/pwa";
+import { canLaunchSms } from "@/lib/pwa";
 import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,12 +69,13 @@ export function RescuerPanel() {
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [tab, setTab] = useState<"signals" | "rescues">("signals");
 
-  // Real SMS to the citizen works from the installed PWA only (it hands over
-  // to the phone's native SMS app). On a plain browser tab sms: URIs don't
-  // open reliably, so the button stays hidden there.
-  const [isPwa, setIsPwa] = useState(false);
+  // Real SMS to the citizen works from the phone (installed PWA or a mobile
+  // browser tab — both support sms: URIs). Pressing Take control hands over
+  // to the phone's native SMS app automatically; the button below is the
+  // manual fallback. On desktop the SMS app can't open, so both stay hidden.
+  const [canSms, setCanSms] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setIsPwa(isPwaInstalled()), 0);
+    const t = setTimeout(() => setCanSms(canLaunchSms()), 0);
     return () => clearTimeout(t);
   }, []);
 
@@ -174,13 +175,24 @@ export function RescuerPanel() {
     setPeopleRescued(1);
   };
 
-  const takeControl = (sosId: string) => {
+const takeControl = (sosId: string) => {
     if (!rescuerName.trim()) {
       setRescuerName("Rescuer");
     }
     claimSos(sosId);
     setFormFor(null);
     setTab("rescues");
+    // The claim is live on HQ instantly (claimSos auto-logs the SIMULATED
+    // confirmation to the citizen's inbox + HQ panel). On a phone we ALSO
+    // hand over to the native SMS app right now, pre-filled to the person in
+    // trouble, so the confirmation physically goes out in the same tap.
+    if (canSms) {
+      const target = sos.find((s) => s.id === sosId);
+      const uri = target ? smsUriFor(target, "claimed", rescuerName.trim() || "Rescuer") : null;
+      if (uri) {
+        window.location.href = uri;
+      }
+    }
   };
 
   const openForm = (s: SosItem) => {
@@ -467,7 +479,7 @@ export function RescuerPanel() {
 </div>
                   )}
 
-                  {isPwa && s.citizenPhone && (
+                  {canSms && s.citizenPhone && (
                     <a
                       href={
                         smsUriFor(
