@@ -80,7 +80,7 @@ interface SosState {
   setRescuerOnline: (id: string, online: boolean) => void;
   unregisterRescuer: (id: string) => void;
   addSos: (s: Omit<SosItem, "id" | "timestamp" | "status">) => string;
-claimSos: (id: string) => void;
+  claimSos: (id: string) => void;
   markReached: (id: string) => void;
   markDelivered: (id: string) => void;
   addRequest: (r: Omit<ResourceRequest, "id" | "timestamp" | "status">) => void;
@@ -176,7 +176,7 @@ export const useSosStore = create<SosState>()(
             if (s.id !== id) return s;
             return {
               ...s,
-status: "claimed",
+              status: "claimed",
               rescuerName: (get().rescuerName || "").trim() || "Rescuer",
               updatedAt: new Date().toISOString(),
             };
@@ -198,7 +198,7 @@ status: "claimed",
             return { ...s, status: "delivered", deliveredAt: now, updatedAt: now };
           }),
         }),
-addRequest: (r) =>
+      addRequest: (r) =>
         set({
           requests: [
             {

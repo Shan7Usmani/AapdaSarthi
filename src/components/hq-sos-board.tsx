@@ -50,6 +50,10 @@ const SOS_STATUS = {
   },
 } as const;
 
+function updatedStamp(item: { timestamp: string; updatedAt?: string }) {
+  return item.updatedAt || item.timestamp;
+}
+
 function SosCard({ s }: { s: SosItem }) {
   const st = SOS_STATUS[s.status] ?? SOS_STATUS.open;
   return (
@@ -61,12 +65,17 @@ function SosCard({ s }: { s: SosItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[12px] font-medium">{s.citizenName}</span>
-          <span className="shrink-0 font-mono text-[9px] text-muted">{timeAgo(s.timestamp)}</span>
+          <span className="shrink-0 font-mono text-[9px] text-muted">
+            {timeAgo(updatedStamp(s))}
+          </span>
         </div>
         <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[9px]">
           <span className={cn("uppercase tracking-wider", st.labelCls)}>{st.label}</span>
           {s.status !== "open" && s.rescuerName && (
             <span className="truncate text-muted">· {s.rescuerName}</span>
+          )}
+          {s.status === "reached" && s.reachedAt && (
+            <span className="text-muted">· reached {timeAgo(s.reachedAt)}</span>
           )}
           {s.status === "delivered" && s.deliveredAt && (
             <span className="text-muted">· {timeAgo(s.deliveredAt)}</span>
@@ -149,7 +158,7 @@ function RequestCard({
       <div className="mt-1.5 flex items-center justify-between">
         <span className="font-mono text-[9px] text-muted">
           <Clock3 className="mr-1 inline h-2.5 w-2.5" />
-          {timeAgo(r.timestamp)}
+          {timeAgo(updatedStamp(r))}
         </span>
         {r.status === "pending" && (
           <Button
@@ -169,7 +178,7 @@ function RequestCard({
 export function HqSosBoard() {
   const { sos, requests, rescuers, fulfillRequest, resetDemo } = useSosStore();
   const validSos = sos.filter((s) => s && typeof s.timestamp === "string");
-  const latest = [...validSos].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 6);
+  const latest = [...validSos].sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a))).slice(0, 6);
   const openCount = validSos.filter((s) => s.status === "open").length;
   const inFieldCount = validSos.filter((s) => s.status === "claimed" || s.status === "reached").length;
   const deliveredCount = validSos.filter((s) => s.status === "delivered").length;
@@ -177,7 +186,7 @@ export function HqSosBoard() {
   const teamsOnline = rescuers.filter((r) => r.online).length;
   const requestsSorted = [...requests]
     .filter((r) => r && typeof r.timestamp === "string")
-    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    .sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a)));
 
   return (
     <Card className="h-full">

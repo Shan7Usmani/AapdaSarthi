@@ -146,6 +146,15 @@ export function RescuerPanel() {
     setPeopleRescued(1);
   };
 
+  const takeControl = (sosId: string) => {
+    if (!rescuerName.trim()) {
+      setRescuerName("Rescuer");
+    }
+    claimSos(sosId);
+    setFormFor(null);
+    setTab("rescues");
+  };
+
   const openForm = (s: SosItem) => {
     const existing = requests.find((r) => r.sosId === s.id && r.status === "pending");
     if (existing) {
@@ -196,7 +205,6 @@ export function RescuerPanel() {
             <span className="font-semibold text-foreground">{rescuerName.trim() || "Rescuer"}</span>
             {!rescuerName.trim() && " — tap Take control and it self-assigns"}
           </span>
-          <span className="ml-auto text-muted/50">build 6167a46</span>
         </p>
       </Card>
 
@@ -332,16 +340,7 @@ export function RescuerPanel() {
                     variant="danger"
                     size="md"
                     onClick={() => {
-                      // Take control of the signal and move to "My rescues".
-                      // claimSos self-assigns "Rescuer" when no name is typed so
-                      // the button ALWAYS works — no silently-disabled state.
-                      // NOTE: do NOT open the resource-request form here — that
-                      // jarred the UI by force-popping a form the instant a
-                      // rescuer took over. The form opens only when they tap
-                      // "Request resources".
-                      claimSos(s.id);
-                      setFormFor(null);
-                      setTab("rescues");
+                      takeControl(s.id);
                     }}
                   >
                     <Radio className="h-3.5 w-3.5" /> Take control
@@ -390,16 +389,18 @@ export function RescuerPanel() {
                     <MediaChips sos={s} />
                   </div>
 
-                  {isDelivered ? (
+                  {isDelivered && (
                     <p className="flex items-center gap-1 font-mono text-[10px] text-safe">
                       <CheckCircle2 className="h-3 w-3" />
                       Item delivered {s.deliveredAt ? timeAgo(s.deliveredAt) : "to citizen"}
                     </p>
-                  ) : formFor === s.id ? (
+                  )}
+
+                  {formFor === s.id ? (
                     <div className="flex flex-col gap-2 rounded-md border border-warn/40 bg-warn/5 p-3">
                       <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-warn">
                         <Package className="h-3 w-3" />{" "}
-                        {isReached ? "Update resources required" : "Request resources from HQ"}
+                        {isReached || isDelivered ? "Update resources required" : "Request resources from HQ"}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {(
@@ -426,7 +427,7 @@ export function RescuerPanel() {
                       </div>
                       <div className="flex gap-2">
                         <Button variant="primary" size="md" className="flex-1" onClick={() => submitRequest(s.id)}>
-                          <Send className="h-3.5 w-3.5" /> {isReached ? "Update HQ" : "Send to HQ"}
+                          <Send className="h-3.5 w-3.5" /> {isReached || isDelivered ? "Update HQ" : "Send to HQ"}
                         </Button>
                         <Button variant="ghost" size="md" onClick={() => setFormFor(null)}>
                           Cancel
@@ -435,7 +436,11 @@ export function RescuerPanel() {
                     </div>
                   ) : (
                     <div className="flex gap-2">
-                      {isReached ? (
+                      {isDelivered ? (
+                        <Button variant="outline" size="md" className="flex-1" onClick={() => openForm(s)}>
+                          <Package className="h-3.5 w-3.5" /> Update resources required
+                        </Button>
+                      ) : isReached ? (
                         <>
                           <Button
                             variant="primary"

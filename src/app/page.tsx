@@ -110,7 +110,9 @@ export default function Landing() {
   const [points, setPoints] = useState<RainfallPoint[] | null>(null);
   const [live, setLive] = useState<boolean>(true);
   const openSos = useSosStore((s) => s.sos.filter((x) => x.status === "open").length);
-  const claimedSos = useSosStore((s) => s.sos.filter((x) => x.status === "claimed").length);
+  const claimedSos = useSosStore((s) =>
+    s.sos.filter((x) => x.status === "claimed" || x.status === "reached" || x.status === "delivered").length
+  );
   const rescuersOnline = useSosStore((s) => s.rescuers.filter((r) => r.online).length);
   const pendingReq = useSosStore((s) => s.requests.filter((r) => r.status === "pending").length);
 
