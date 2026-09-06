@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { Header } from "@/components/header";
 import { RoleNav } from "@/components/role-nav";
-import { LiveMap } from "@/components/live-map";
+import { LiveMap, type MapInfoData } from "@/components/live-map";
+import { MapInfoPanel } from "@/components/map-info-panel";
 import { RiskPanel } from "@/components/risk-panel";
 import { ResourcePanel } from "@/components/resource-panel";
 import { AlertComposer } from "@/components/alert-composer";
@@ -9,11 +13,9 @@ import { HqSosBoard } from "@/components/hq-sos-board";
 import { CitizenMessages } from "@/components/citizen-messages";
 import { RiskTrendChart, DistrictImpactChart } from "@/components/charts";
 
-export const metadata = {
-  title: "HQ Command Center — Aapda Saarthi",
-};
-
 export default function HqPage() {
+  const [mapInfo, setMapInfo] = useState<MapInfoData | null>(null);
+
   return (
     <div className="flex min-h-screen flex-col">
       <RoleNav active="hq" />
@@ -23,8 +25,11 @@ export default function HqPage() {
         {/* left — map + analytics */}
         <section className="lg:col-span-8 flex flex-col gap-4">
           <div className="glass-2 relative h-[52vh] min-h-[460px] overflow-hidden rounded-2xl">
-            <LiveMap />
+            <LiveMap onInfoUpdate={setMapInfo} />
           </div>
+
+          {/* map info — separate section below the map */}
+          {mapInfo && <MapInfoPanel data={mapInfo} />}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <RiskTrendChart />

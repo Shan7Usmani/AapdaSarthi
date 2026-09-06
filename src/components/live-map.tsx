@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useMapEvents } from "react-leaflet";
-import { CloudRain, WifiOff, RefreshCw, ZoomIn, Route, Navigation } from "lucide-react";
+import { WifiOff, RefreshCw, Route, Navigation } from "lucide-react";
 import { useLiveStats } from "@/lib/live-stats";
 import { getRainfall, BAND_META, rainfallBand, type RainfallPoint } from "@/lib/rainfall";
 import { type DistrictRiskOutput, type RiskBand } from "@/lib/risk";
@@ -154,16 +154,6 @@ function LiveRiskLayer({ points }: { points: DistrictRiskOutput[] | null }) {
   );
 }
 
-function LiveRiskSummary({ summary, source }: { summary: string; source: string }) {
-  return (
-    <div className="pointer-events-none absolute bottom-24 left-3 z-[1000] max-w-[240px] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 shadow-sm backdrop-blur">
-      <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-cyan">AI Risk Verdict</div>
-      <p className="mt-1 text-[11px] leading-snug text-foreground/90">{summary}</p>
-      <div className="mt-1 font-mono text-[8px] uppercase text-muted">live · {source}</div>
-    </div>
-  );
-}
-
 /* ---------- interactive safe-route generator ---------- */
 function MapClickHandler({
   onPick,
@@ -246,7 +236,22 @@ function SafeRouteBanner({
 }
 
 /* ---------- main map ---------- */
-export function LiveMap() {
+
+export interface MapInfoData {
+  critical: number;
+  high: number;
+  atRisk: number;
+  totalOpenPeople: number;
+  counts: { high: number; moderate: number; low: number };
+  source: string;
+  riskSummary: { summary: string; source: string } | null;
+  liveOpenCount: number;
+  liveClaimedCount: number;
+  riskPoints: DistrictRiskOutput[];
+  detailed: boolean;
+}
+
+export function LiveMap({ onInfoUpdate }: { onInfoUpdate?: (data: MapInfoData) => void }) {
   const [zoom, setZoom] = useState(4.5);
   const [points, setPoints] = useState<RainfallPoint[] | null>(null);
   const [source, setSource] = useState<"live" | "seeded" | "loading">("loading");
@@ -409,6 +414,23 @@ export function LiveMap() {
       }
     : { high: 0, moderate: 0, low: 0 };
 
+  // push computed info to parent panel
+  useEffect(() => {
+    onInfoUpdate?.({
+      critical,
+      high,
+      atRisk,
+      totalOpenPeople,
+      counts,
+      source,
+      riskSummary,
+      liveOpenCount: live.openCount,
+      liveClaimedCount: live.claimedCount,
+      riskPoints: riskPoints ?? [],
+      detailed,
+    });
+  }, [critical, high, atRisk, totalOpenPeople, counts, source, riskSummary, live.openCount, live.claimedCount, riskPoints, detailed, onInfoUpdate]);
+
   return (
     <div className="relative h-full w-full overflow-hidden">
       <MapContainer
@@ -492,118 +514,6 @@ export function LiveMap() {
           />
         )}
       </MapContainer>
-
-      {/* top-left overlay: live risk summary */}
-      <div className="pointer-events-none absolute top-3 left-3 z-[1000] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 shadow-sm backdrop-blur">
-        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan">
-          Live Flood Risk · All India
-        </div>
-        <div className="mt-1 font-mono text-[10px] text-muted">
-          <span className="text-danger">{critical} CRITICAL</span> ·{" "}
-          <span className="text-warn">{high} HIGH</span> districts
-        </div>
-        <div className="mt-1 font-mono text-[10px] text-danger">
-          <span className="text-muted">LIVE SOS:</span> {live.openCount} open ·{" "}
-          {live.claimedCount} in the field
-        </div>
-      </div>
-
-      {/* bottom-left: at-risk district chips (compact, above legend) */}
-      {(() => {
-        const zoneDistricts =
-          riskPoints?.filter(
-            (d) =>
-              d.severity === "CRITICAL" ||
-              d.severity === "HIGH" ||
-              d.severity === "MODERATE"
-          ) ?? [];
-        const display = zoneDistricts.slice(0, 8);
-        if (display.length === 0) return null;
-        return (
-          <div className="pointer-events-auto absolute bottom-14 left-3 z-[1000] max-w-[320px] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 shadow-sm backdrop-blur">
-            <div className="mb-1 font-mono text-[8px] uppercase tracking-[0.15em] text-muted">
-              At-Risk Districts
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {display.map((d) => (
-                <span
-                  key={d.name}
-                  className="inline-flex items-center gap-1 rounded-sm border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-1.5 py-0.5 font-mono text-[9px]"
-                >
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ background: riskColor[d.severity as RiskBand] ?? riskColor.LOW }}
-                  />
-                  <span className="text-foreground">{d.name}</span>
-                  <span style={{ color: riskColor[d.severity as RiskBand] }} className="font-bold">
-                    {d.riskScore}
-                  </span>
-                </span>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* top-right: at-risk tally from live engine */}
-      <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 text-right shadow-sm backdrop-blur">
-        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-          At-Risk Districts
-        </div>
-        <div className="font-mono text-lg font-bold text-danger">
-          {atRisk.toLocaleString("en-IN")}
-        </div>
-        <div className="font-mono text-[9px] text-muted">
-          CRITICAL + HIGH · {totalOpenPeople.toLocaleString("en-IN")} people in open signals
-        </div>
-      </div>
-
-      {/* top center-right: rainfall source */}
-      <div className="pointer-events-none absolute top-3 right-40 z-[1000] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 shadow-sm backdrop-blur">
-        <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-cyan">
-          <CloudRain className="h-3 w-3" /> Rainfall
-        </div>
-        <div className="mt-0.5 font-mono text-[10px]">
-          <span className="text-danger">{counts.high} heavy</span> ·{" "}
-          <span className="text-warn">{counts.moderate} mod</span> ·{" "}
-          <span className="text-safe">{counts.low} dry</span>
-          {source === "seeded" && <span className="ml-2 text-muted">(cached)</span>}
-        </div>
-      </div>
-
-      {/* live risk summary */}
-      {riskSummary && <LiveRiskSummary summary={riskSummary.summary} source={riskSummary.source} />}
-
-      {/* zoom hint */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-cyan shadow-sm">
-          <ZoomIn className="h-3 w-3" />
-          {detailed ? "district detail · routes live" : "zoom in to analyze districts"}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-            <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.CRITICAL }} /> Critical zone
-          </div>
-          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-            <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.HIGH }} /> High zone
-          </div>
-          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-            <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.MODERATE }} /> Moderate zone
-          </div>
-          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
-            <span className="h-2 w-2 rounded-full border-2 border-white" style={{ background: "#b91c1c" }} /> SOS signal
-          </div>
-          {(Object.keys(BAND_META) as Array<keyof typeof BAND_META>).map((b) => (
-            <div
-              key={b}
-              className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm"
-            >
-              <span className="h-2 w-2 rounded-sm" style={{ background: BAND_META[b].color }} />
-              {BAND_META[b].label}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* safe-route toggle */}
       <Button
