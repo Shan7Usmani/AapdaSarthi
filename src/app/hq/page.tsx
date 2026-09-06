@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Header } from "@/components/header";
 import { RoleNav } from "@/components/role-nav";
-import { LiveMap, type MapInfoData } from "@/components/live-map";
-import { MapInfoPanel } from "@/components/map-info-panel";
+import { LiveMap } from "@/components/live-map";
 import { RiskPanel } from "@/components/risk-panel";
 import { ResourcePanel } from "@/components/resource-panel";
 import { AlertComposer } from "@/components/alert-composer";
@@ -13,8 +11,6 @@ import { HqSosBoard } from "@/components/hq-sos-board";
 import { RiskTrendChart, DistrictImpactChart } from "@/components/charts";
 
 export default function HqPage() {
-  const [mapInfo, setMapInfo] = useState<MapInfoData | null>(null);
-
   return (
     <div className="flex min-h-screen flex-col">
       <RoleNav active="hq" />
@@ -24,11 +20,8 @@ export default function HqPage() {
         {/* left — map + analytics */}
         <section className="lg:col-span-8 flex flex-col gap-4">
           <div className="glass-2 relative h-[52vh] min-h-[460px] overflow-hidden rounded-2xl">
-            <LiveMap onInfoUpdate={setMapInfo} />
+            <LiveMap />
           </div>
-
-          {/* map info — separate section below the map */}
-          {mapInfo && <MapInfoPanel data={mapInfo} />}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <RiskTrendChart />
@@ -39,7 +32,7 @@ export default function HqPage() {
         </section>
 
         {/* right rail — live response ops */}
-        <section className="lg:col-span-4 flex flex-col gap-4">
+        <section className="lg:col-span-4 flex flex-col gap-4 self-start">
           <HqSosBoard />
           <AutoAlerts />
           <RiskPanel />
