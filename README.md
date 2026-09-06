@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AapdaSaarthi — Flood Response Copilot
 
-## Getting Started
+**DecodeSIH 2026 · Bharat Shakti Track · PS3 — Disaster Response Intelligence Platform**
 
-First, run the development server:
+AapdaSaarthi is a two-sided resource-allocation command center for flood response: a **citizen SOS** app, a **rescuer dispatch** app, and an **HQ command center** with a live India rainfall map, an AI risk engine, and multilingual alerts.
+
+## Live prototype
+
+Deployed on Vercel via `main` — every push to the repo auto-deploys to production.
+
+## Roles
+
+- **/citizen** — one-tap SOS with voice/photo/location, plus SMS confirmation back to the citizen's number at every rescue stage.
+- **/rescuer** — nearest-rescuer dispatch (distance-sorted, "take control"), request medkits/foodkits/transport, on-site → delivered lifecycle, and a "SMS this citizen" fallback that opens the native SMS app addressed to the citizen's stored number.
+- **/hq** — live SOS board + resource-request queue, live India rainfall map (Open-Meteo), AI risk engine, ground-info update threads, and auto multilingual alerts.
+
+## Core features
+
+- **Offline-first PWA** — all routes precached (`/`, `/citizen`, `/rescuer`, `/hq`, `/offline`) with a branded offline fallback; SOS works with just cellular signal via an `sms:` link.
+- **Live sync** — SOS / rescuer / resource records sync wirelessly via Supabase with last-write-wins realtime merging (stale devices can't revert a delivered rescue back to claimed).
+- **SMS confirmations** — auto "has taken your request" / "at your location" / "item delivered" messages back to the citizen (SIMULATED by default — plug a gateway via `src/lib/server/sms.ts`).
+- **Alert dispatch** — `POST /api/alerts/dispatch` with an honest simulated-fallback broadcast queue (Swytchcode-ready, see `SWYTCHCODE.md`).
+- **Risk engine** — heatwave/rainfall risk scoring + district risk panels on the HQ map.
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in optional Supabase / emergency SMS values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The app runs fully client-side (localStorage) when Supabase env vars are blank, so it works with zero backend setup.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+See `.env.example` for the full list. All are optional; Supabase enables live multi-device sync, and the emergency SMS number powers the offline `sms:` fallback.
 
-To learn more about Next.js, take a look at the following resources:
+## Tech stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Leaflet + react-leaflet · Supabase · Zustand · TanStack Query · Serwist (PWA) · Open-Meteo (free weather API).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Building for production
 
-## Deploy on Vercel
+```bash
+npm run build   # next build --webpack
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `PROJECT_HANDOFF.md` — architecture, sync design, known limitations, demo script.
+- `PITCH_SHEET.md` — one-page pitch for judges.
+- `SUPABASE_SETUP.md` — Supabase project + RLS setup.
+- `SWYTCHCODE.md` — optional alert-dispatch gateway setup.
+
+---
+
+Built by **FALCONX** — DecodeSIH 2026, Bharat Shakti PS3.
