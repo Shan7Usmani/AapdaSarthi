@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -38,7 +38,7 @@ function MediaChips({ sos }: { sos: SosItem }) {
         return (
           <span
             key={i}
-            className="flex items-center gap-1 rounded border border-border bg-panel-2/70 px-1.5 py-0.5 font-mono text-[9px] text-muted"
+            className="flex items-center gap-1 rounded border border-border bg-[rgba(255,255,255,0.04)] px-1.5 py-0.5 font-mono text-[9px] text-muted"
           >
             <Icon className="h-2.5 w-2.5 text-cyan" />
             {m.kind}
@@ -212,7 +212,7 @@ const takeControl = (sosId: string) => {
             value={rescuerName}
             onChange={(e) => setRescuerName(e.target.value)}
             placeholder="Your name / team ID · e.g. SDRF Team 4"
-            className="flex-1 rounded-md border border-border-strong bg-slate-50 px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
+            className="flex-1 rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
           />
           <Button
             variant={myLoc ? "primary" : "outline"}
@@ -350,7 +350,7 @@ const takeControl = (sosId: string) => {
                             min={0}
                             value={val}
                             onChange={(e) => setter(Math.max(0, Number(e.target.value)))}
-                            className="w-full rounded-md border border-border-strong bg-slate-50 px-2.5 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
+                            className="w-full rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-2.5 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
                           />
                         </div>
                       ))}
@@ -452,7 +452,7 @@ const takeControl = (sosId: string) => {
                               : activeRequest?.status === "dispatched"
                                 ? "text-cyan border-cyan/40 bg-cyan/10"
                                 : activeRequest?.status === "received"
-                                  ? "text-orange-600 border-orange-300 bg-orange-50"
+                                  ? "text-[#ffb02e] border-[rgba(255,176,46,0.3)] bg-[rgba(255,176,46,0.1)]"
                                   : "text-safe border-safe/40 bg-safe/10"
                           )}
                         >
@@ -511,7 +511,7 @@ const takeControl = (sosId: string) => {
                               min={0}
                               value={val}
                               onChange={(e) => setter(Math.max(0, Number(e.target.value)))}
-                              className="w-full rounded-md border border-border-strong bg-slate-50 px-2.5 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
+                              className="w-full rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-2.5 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
                             />
                           </div>
                         ))}

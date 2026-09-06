@@ -134,7 +134,7 @@ export function AlertComposer() {
           ))}
         </div>
 
-        <div className="relative rounded-md border border-border-strong bg-slate-50 p-3">
+        <div className="relative rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] p-3">
           <div className="mb-1.5 flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
               SMS preview · {active.code}
@@ -146,7 +146,7 @@ export function AlertComposer() {
           <p className="text-[12px] leading-relaxed text-foreground/90">{active.sms}</p>
 
           {sent && (
-            <div className="absolute inset-0 grid place-items-center rounded-md bg-white/90 backdrop-blur-sm">
+            <div className="absolute inset-0 grid place-items-center rounded-md bg-[rgba(6,10,16,0.9)] backdrop-blur-sm">
               <div className="flex items-center gap-2 rounded border border-safe/50 bg-safe/10 px-4 py-2 font-mono text-[12px] text-safe">
                 <Send className="h-3.5 w-3.5" />
                 {via === "swytchcode"
@@ -166,7 +166,7 @@ export function AlertComposer() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 rounded-md border border-border bg-panel-2/50 px-3 py-1.5 font-mono text-[10px] text-muted">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-mono text-[10px] text-muted">
           <MessageSquareText className="h-3 w-3 text-cyan" />
           Channels: SMS · WhatsApp · Cell-broadcast (CB-SMS) · IVR
         </div>

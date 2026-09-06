@@ -451,7 +451,7 @@ setSentId(id);
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Ritu Sharma"
-            className="w-full rounded-md border border-border-strong bg-slate-50 px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
+            className="w-full rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
           />
         </div>
 
@@ -464,7 +464,7 @@ setSentId(id);
             onChange={(e) => setPhone(e.target.value)}
             type="tel"
             placeholder="10-digit mobile · +91 97749 22001"
-            className="w-full rounded-md border border-border-strong bg-slate-50 px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
+            className="w-full rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-3 py-2 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
           />
           {phone.trim() && !phoneOk && (
             <p className="mt-1 font-mono text-[10px] text-danger">
@@ -484,7 +484,7 @@ setSentId(id);
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
               placeholder="Water has entered our home and is rising fast. We are on the first floor and need rescue…"
-              className="w-full resize-none rounded-md border border-border-strong bg-slate-50 py-2 pr-3 pl-8 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
+              className="w-full resize-none rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] py-2 pr-3 pl-8 text-[13px] text-foreground placeholder:text-muted/50 focus:border-cyan/60 focus:outline-none"
             />
           </div>
         </div>
@@ -497,7 +497,7 @@ setSentId(id);
             <Button size="icon" variant="outline" onClick={() => setPeopleCount((n) => Math.max(1, n - 1))}>
               −
             </Button>
-            <div className="flex flex-1 items-center justify-center gap-2 rounded-md border border-border-strong bg-slate-50 py-2 font-mono text-sm">
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] py-2 font-mono text-sm">
               <Users className="h-3.5 w-3.5 text-cyan" />
               <span className="font-bold text-foreground">{peopleCount}</span>
               <span className="text-muted">person{peopleCount > 1 ? "s" : ""}</span>
@@ -536,7 +536,7 @@ setSentId(id);
                   step="0.0001"
                   value={manualLat}
                   onChange={(e) => setManualLat(Number(e.target.value))}
-                  className="w-full rounded-md border border-border-strong bg-slate-50 px-2 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
+                  className="w-full rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-2 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
                   aria-label="Manual latitude"
                 />
                 <span className="font-mono text-[10px] text-muted">lat</span>
@@ -545,7 +545,7 @@ setSentId(id);
                   step="0.0001"
                   value={manualLng}
                   onChange={(e) => setManualLng(Number(e.target.value))}
-                  className="w-full rounded-md border border-border-strong bg-slate-50 px-2 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
+                  className="w-full rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-2 py-1.5 font-mono text-[12px] text-foreground focus:border-cyan/60 focus:outline-none"
                   aria-label="Manual longitude"
                 />
                 <span className="font-mono text-[10px] text-muted">lng</span>
@@ -593,11 +593,12 @@ setSentId(id);
         {media.length > 0 && (
           <div className="flex flex-col gap-2">
             {media.map((m, i) => (
-              <div key={`${m.name}-${i}`} className="flex items-center gap-2 rounded-md border border-border bg-panel-2/60 px-2 py-1.5">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-cyan/10 border border-cyan/30 text-cyan">
+              <div key={`${m.name}-${i}`} className="flex items-center gap-2 rounded-md border border-border bg-[rgba(255,255,255,0.04)] px-2 py-1.5">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-[rgba(0,180,216,0.1)] border border-[rgba(0,180,216,0.3)] text-cyan">
                   {m.kind === "photo" ? <ImagePlus className="h-3.5 w-3.5" /> : m.kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                 </span>
                 {m.kind === "photo" && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.url} alt="" className="h-9 w-12 shrink-0 rounded object-cover" />
                 )}
                 <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-muted">{m.name}</span>

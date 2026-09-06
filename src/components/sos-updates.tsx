@@ -26,7 +26,7 @@ export function SosUpdates({
   const readOnly = sos.status === "delivered";
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-border bg-panel-2/50 px-3 py-2">
+    <div className="flex flex-col gap-1.5 rounded-md border border-border bg-[rgba(255,255,255,0.03)] px-3 py-2">
       <div className="flex items-center justify-between">
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
           Ground updates
@@ -73,7 +73,7 @@ export function SosUpdates({
               }
             }}
             placeholder={placeholder ?? "Update command centre on ground info…"}
-            className="min-w-0 flex-1 rounded-md border border-border-strong bg-slate-50 px-2 py-1.5 text-[11px] text-foreground placeholder:text-muted/40 focus:border-cyan/60 focus:outline-none"
+            className="min-w-0 flex-1 rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[11px] text-foreground placeholder:text-muted/40 focus:border-cyan/60 focus:outline-none"
           />
           <Button
             variant="primary"

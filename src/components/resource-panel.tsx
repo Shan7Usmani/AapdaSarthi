@@ -64,7 +64,7 @@ export function ResourcePanel() {
                 key={r.label}
                 className="flex items-center gap-3 rounded-md border border-border bg-panel-2/60 px-3 py-2.5"
               >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-cyan/10 border border-cyan/30 text-cyan">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[rgba(0,180,216,0.1)] border border-[rgba(0,180,216,0.3)] text-cyan">
                   {iconMap[r.icon] ?? <Users className="h-4 w-4" />}
                 </div>
                 <div className="min-w-0 flex-1">

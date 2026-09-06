@@ -48,19 +48,19 @@ export function CitizenInbox() {
       </CardHeader>
       <CardContent className="flex flex-col gap-1.5">
         {!myDigits ? (
-          <p className="rounded-md border border-dashed border-border-strong px-3 py-4 text-center text-[11px] text-muted">
+          <p className="rounded-md border border-dashed border-[rgba(255,255,255,0.1)] px-3 py-4 text-center text-[11px] text-muted">
             Send an SOS with your contact number — every update from the rescuer team appears here, sent to{" "}
             <span className="text-foreground">the exact number you signalled from</span>.
           </p>
         ) : mine.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border-strong px-3 py-4 text-center text-[11px] text-muted">
+          <p className="rounded-md border border-dashed border-[rgba(255,255,255,0.1)] px-3 py-4 text-center text-[11px] text-muted">
             No updates yet for this number. When a rescuer takes your request, the SMS confirmation lands here.
           </p>
         ) : (
           mine.map((m) => {
             const st = STAGE_CHIP[m.stage];
             return (
-              <div key={m.id} className="rounded-md border border-border bg-panel-2/50 px-3 py-2">
+              <div key={m.id} className="rounded-md border border-border bg-[rgba(255,255,255,0.03)] px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className={cn("rounded px-1 py-px font-mono text-[8px] uppercase tracking-wider", st.cls)}>
                     {st.label}

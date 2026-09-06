@@ -134,7 +134,7 @@ function RequestCard({
   const statusMeta = {
     pending: "text-warn border-warn/40 bg-warn/10",
     dispatched: "text-cyan border-cyan/40 bg-cyan/10",
-    received: "text-orange-600 border-orange-300 bg-orange-50",
+    received: "text-[#ffb02e] border-[rgba(255,176,46,0.3)] bg-[rgba(255,176,46,0.1)]",
     allocated: "text-safe border-safe/40 bg-safe/10",
   }[normalizedStatus];
   const statusLabel = {
@@ -167,7 +167,7 @@ function RequestCard({
         {items.map((it) => {
           const Icon = it.icon;
           return (
-            <div key={it.label} className="flex items-center gap-1 rounded border border-border bg-slate-50 px-1.5 py-1">
+            <div key={it.label} className="flex items-center gap-1 rounded border border-border bg-[rgba(255,255,255,0.04)] px-1.5 py-1">
               <Icon className="h-3 w-3 text-cyan" />
               <div className="leading-none">
                 <div className="font-mono text-[11px] font-bold text-foreground">{it.value}</div>
@@ -243,7 +243,7 @@ export function HqSosBoard() {
             <span className="font-mono text-[9px] text-muted">{sos.length} total</span>
           </div>
           {latest.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border-strong px-3 py-4 text-center text-[11px] text-muted">
+            <div className="rounded-md border border-dashed border-[rgba(255,255,255,0.1)] px-3 py-4 text-center text-[11px] text-muted">
               No signals yet. Open the{" "}
               <a href="/citizen" className="text-cyan hover:underline">
                 citizen
@@ -269,7 +269,7 @@ export function HqSosBoard() {
             </span>
           </div>
           {requests.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border-strong px-3 py-4 text-center text-[11px] text-muted">
+            <div className="rounded-md border border-dashed border-[rgba(255,255,255,0.1)] px-3 py-4 text-center text-[11px] text-muted">
               Rescuers request medkits / food / transport here after taking control.
             </div>
           ) : (
@@ -281,7 +281,7 @@ export function HqSosBoard() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 rounded-md border border-border bg-panel-2/50 px-3 py-1.5 font-mono text-[10px] text-muted">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-[rgba(255,255,255,0.03)] px-3 py-1.5 font-mono text-[10px] text-muted">
           <CheckCircle2 className="h-3 w-3 text-safe" />
           Resource Allocation Engine matches every allocated request to the nearest available stock.
         </div>

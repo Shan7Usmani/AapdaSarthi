@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Siren,
@@ -21,6 +23,12 @@ import {
 import { getRainfall, BAND_META, rainfallBand, type RainfallPoint } from "@/lib/rainfall";
 import { useSosStore } from "@/store/sos-store";
 import { cn } from "@/lib/utils";
+import { ScrollReveal, StaggerContainer, staggerItem, AnimatedCounter, GlassCard } from "@/components/motion";
+
+const HeroScene = dynamic(
+  () => import("@/components/hero-scene").then((m) => m.HeroSceneInner),
+  { ssr: false, loading: () => <div className="absolute inset-0 bg-[#060a10]" /> }
+);
 
 const ROLES = [
   {
@@ -30,8 +38,9 @@ const ROLES = [
     role: "CITIZEN",
     desc: "Report an SOS with your live location, a message, photo, video or voice note. Help reaches the nearest rescuer automatically.",
     icon: Siren,
-    chip: "bg-red-50 text-red-600 border-red-200",
-    hover: "hover:border-red-300",
+    neonClass: "neon-red",
+    glowColor: "rgba(255,59,92,0.15)",
+    borderColor: "rgba(255,59,92,0.3)",
     cta: "Send SOS",
   },
   {
@@ -41,8 +50,9 @@ const ROLES = [
     role: "RESCUER",
     desc: "See SOS signals sorted by distance, take control of a situation, and request medkits, foodkits & transport from HQ.",
     icon: ShieldAlert,
-    chip: "bg-orange-50 text-orange-600 border-orange-200",
-    hover: "hover:border-orange-300",
+    neonClass: "neon-amber",
+    glowColor: "rgba(255,176,46,0.15)",
+    borderColor: "rgba(255,176,46,0.3)",
     cta: "Dispatch panel",
   },
   {
@@ -52,8 +62,9 @@ const ROLES = [
     role: "HQ · DISASTER CONTROL",
     desc: "Live all-India rainfall map, AI risk engine, resource allocation, incoming SOS board and automated multilingual alerts.",
     icon: Activity,
-    chip: "bg-sky-50 text-sky-600 border-sky-200",
-    hover: "hover:border-sky-300",
+    neonClass: "neon-cyan",
+    glowColor: "rgba(0,217,255,0.15)",
+    borderColor: "rgba(0,217,255,0.3)",
     cta: "Open command center",
   },
 ];
@@ -65,8 +76,7 @@ const FUTURE_SCOPE = [
     title: "Resilient Reach · Offline-first",
     desc: "Service-worker PWA caching, local SOS queues that auto-sync on reconnection, and an SMS fallback so a citizen with no data can still signal for help.",
     status: "Live today",
-    tag: "bg-emerald-50 text-emerald-600 border-emerald-200",
-    chip: "bg-emerald-50 text-emerald-600",
+    statusColor: "neon-green",
   },
   {
     phase: "02",
@@ -74,8 +84,7 @@ const FUTURE_SCOPE = [
     title: "Autonomous Response · AI Dispatch",
     desc: "An AI dispatcher that triages SOS, auto-suggests the nearest available team and drafts multilingual alerts in real time from a single intake form.",
     status: "Next up",
-    tag: "bg-sky-50 text-sky-600 border-sky-200",
-    chip: "bg-sky-50 text-sky-600",
+    statusColor: "neon-cyan",
   },
   {
     phase: "03",
@@ -83,8 +92,7 @@ const FUTURE_SCOPE = [
     title: "Mesh & Satellite · No network at all",
     desc: "Device-to-device mesh messaging and satellite backhaul for telemetry so coordination survives when cell towers and internet go down.",
     status: "On roadmap",
-    tag: "bg-slate-50 text-slate-500 border-slate-200",
-    chip: "bg-slate-100 text-slate-500",
+    statusColor: "text-muted",
   },
   {
     phase: "04",
@@ -92,8 +100,7 @@ const FUTURE_SCOPE = [
     title: "Smarter HQ · Forecast Fusion",
     desc: "Blend live rainfall, river-gauge and satellite flood models into a predictive risk score that tells HQ where danger is forming before it peaks.",
     status: "On roadmap",
-    tag: "bg-slate-50 text-slate-500 border-slate-200",
-    chip: "bg-slate-100 text-slate-500",
+    statusColor: "text-muted",
   },
   {
     phase: "05",
@@ -101,8 +108,7 @@ const FUTURE_SCOPE = [
     title: "Scale to Nation · Open platform",
     desc: "A standardized API and pluggable SOS/resource integrations so any state disaster cell, NGO or volunteer network can join the same response loop.",
     status: "On roadmap",
-    tag: "bg-slate-50 text-slate-500 border-slate-200",
-    chip: "bg-slate-100 text-slate-500",
+    statusColor: "text-muted",
   },
 ];
 
@@ -132,184 +138,219 @@ export default function Landing() {
   const moderate = points?.filter((p) => rainfallBand(p.precipitation) === "moderate").length ?? 0;
 
   return (
-    <div className="relative flex min-h-screen flex-col">
-      {/* soft top accent */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-sky-100/70 to-transparent" />
+    <div className="relative flex min-h-screen flex-col overflow-hidden">
+      {/* 3D Hero Scene */}
+      <div className="absolute inset-0 z-0">
+        <Suspense fallback={<div className="absolute inset-0 bg-[#060a10]" />}>
+          <HeroScene />
+        </Suspense>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#060a10]/40 via-transparent to-[#060a10]" />
+      </div>
 
-      <div className="relative z-10 flex items-center justify-between px-5 py-4 sm:px-8">
+      {/* Top bar */}
+      <div className="relative z-20 flex items-center justify-between px-5 py-4 sm:px-8">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-cyan text-white shadow-sm">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-[#00b4d8] to-[#0096b7] text-white shadow-[0_0_20px_rgba(0,180,216,0.35)]">
             <Waves className="h-5 w-5" />
           </div>
           <div className="leading-tight">
-            <div className="text-lg font-extrabold tracking-tight">AAPDA SAARTHI</div>
+            <div className="text-lg font-extrabold tracking-tight text-foreground font-display">
+              AAPDA SAARTHI
+            </div>
             <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
               Disaster Response Intelligence Platform
             </div>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[11px] font-medium text-muted shadow-sm">
-          <Radio className="h-3.5 w-3.5 text-cyan" />
+        <div className="hidden sm:flex items-center gap-2 rounded-full glass-1 px-3.5 py-1.5 text-[11px] font-medium text-muted">
+          <Radio className="h-3.5 w-3.5 text-[#00b4d8]" />
           DECODE SIH 2026 · BHARAT SHAKTI · PS3
         </div>
       </div>
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center gap-9 px-5 py-10 sm:px-8">
+      {/* Hero content */}
+      <main className="relative z-20 flex flex-1 flex-col items-center justify-center gap-9 px-5 py-10 sm:px-8">
         <div className="max-w-3xl text-center">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan shadow-sm">
-            <CloudRain className="h-4 w-4" />
-            {live ? "Live rainfall telemetry" : "Rainfall telemetry"} · Open-Meteo
-          </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-6xl">
-            When disaster hits,
-            <br />
-            <span className="bg-gradient-to-r from-cyan to-blue-600 bg-clip-text text-transparent">
-              Aapda Saarthi responds.
-            </span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-slate-500">
-            One platform connecting citizens in trouble, the nearest rescuer, and the command
-            center that allocates boats, medkits and rations. Live rainfall feeds, AI risk scoring,
-            automated multilingual alerts.
-          </p>
+          <ScrollReveal>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full glass-1 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00b4d8]">
+              <CloudRain className="h-4 w-4" />
+              {live ? "Live rainfall telemetry" : "Rainfall telemetry"} · Open-Meteo
+            </div>
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <h1 className="font-display text-4xl font-black tracking-tight text-foreground sm:text-6xl">
+              When disaster hits,
+              <br />
+              <span className="gradient-text">
+                Aapda Saarthi responds.
+              </span>
+            </h1>
+          </ScrollReveal>
+          <ScrollReveal delay={0.2}>
+            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-muted">
+              One platform connecting citizens in trouble, the nearest rescuer, and the command
+              center that allocates boats, medkits and rations. Live rainfall feeds, AI risk scoring,
+              automated multilingual alerts.
+            </p>
+          </ScrollReveal>
         </div>
 
-        {/* live system status */}
-        <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-              <span className="h-2 w-2 rounded-full bg-safe live-dot" /> System live
-            </span>
-            <Link href="/hq" className="font-mono text-[10px] uppercase tracking-wider text-cyan hover:underline">
-              open command center →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div className="flex flex-col items-center rounded-lg border border-border bg-panel-2/60 px-2 py-2.5">
-              <div className="text-xl font-black text-danger">{openSos}</div>
-              <div className="font-mono text-[9px] uppercase text-muted">open SOS</div>
+        {/* Live system status */}
+        <ScrollReveal delay={0.3}>
+          <GlassCard depth={3} className="w-full max-w-3xl p-4" hover={false}>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+                <span className="h-2 w-2 rounded-full bg-[#00ff7a] live-dot-green" /> System live
+              </span>
+              <Link href="/hq" className="font-mono text-[10px] uppercase tracking-wider text-[#00b4d8] hover:underline">
+                open command center →
+              </Link>
             </div>
-            <div className="flex flex-col items-center rounded-lg border border-border bg-panel-2/60 px-2 py-2.5">
-              <div className="text-xl font-black text-warn">{claimedSos}</div>
-              <div className="font-mono text-[9px] uppercase text-muted">active rescues</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="flex flex-col items-center rounded-xl glass-1 px-2 py-3">
+                <AnimatedCounter value={openSos} className="text-xl font-black text-[#ff3b5c]" />
+                <div className="font-mono text-[9px] uppercase text-muted mt-1">open SOS</div>
+              </div>
+              <div className="flex flex-col items-center rounded-xl glass-1 px-2 py-3">
+                <AnimatedCounter value={claimedSos} className="text-xl font-black text-[#ffb02e]" />
+                <div className="font-mono text-[9px] uppercase text-muted mt-1">active rescues</div>
+              </div>
+              <div className="flex flex-col items-center rounded-xl glass-1 px-2 py-3">
+                <AnimatedCounter value={rescuersOnline} className="text-xl font-black text-[#00b4d8]" />
+                <div className="font-mono text-[9px] uppercase text-muted mt-1">teams online</div>
+              </div>
+              <div className="flex flex-col items-center rounded-xl glass-1 px-2 py-3">
+                <AnimatedCounter value={pendingReq} className="text-xl font-black text-[#00ff7a]" />
+                <div className="font-mono text-[9px] uppercase text-muted mt-1">reqs pending</div>
+              </div>
             </div>
-            <div className="flex flex-col items-center rounded-lg border border-border bg-panel-2/60 px-2 py-2.5">
-              <div className="text-xl font-black text-cyan">{rescuersOnline}</div>
-              <div className="font-mono text-[9px] uppercase text-muted">teams online</div>
-            </div>
-            <div className="flex flex-col items-center rounded-lg border border-border bg-panel-2/60 px-2 py-2.5">
-              <div className="text-xl font-black text-safe">{pendingReq}</div>
-              <div className="font-mono text-[9px] uppercase text-muted">reqs pending</div>
-            </div>
-          </div>
-        </div>
+          </GlassCard>
+        </ScrollReveal>
 
+        {/* Rainfall legend */}
         {points && (
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-slate-500">
-            <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: BAND_META.high.color }} />
-              {high} heavy-rain regions
-            </span>
-            <span className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ background: BAND_META.moderate.color }}
-              />
-              {moderate} moderate
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: BAND_META.low.color }} />
-              {points.length - high - moderate} dry
-            </span>
-          </div>
+          <ScrollReveal delay={0.4}>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-muted">
+              <span className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: BAND_META.high.color }} />
+                {high} heavy-rain regions
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: BAND_META.moderate.color }} />
+                {moderate} moderate
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: BAND_META.low.color }} />
+                {points.length - high - moderate} dry
+              </span>
+            </div>
+          </ScrollReveal>
         )}
 
-        <div className="grid w-full max-w-5xl grid-cols-1 gap-5 md:grid-cols-3">
+        {/* Role cards */}
+        <StaggerContainer className="grid w-full max-w-5xl grid-cols-1 gap-5 md:grid-cols-3" staggerDelay={0.1}>
           {ROLES.map((r) => {
             const Icon = r.icon;
             return (
-              <Link
-                key={r.key}
-                href={r.href}
-                className={cn(
-                  "group flex flex-col gap-3.5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg",
-                  r.hover
-                )}
-              >
-                <div className={cn("grid h-12 w-12 place-items-center rounded-xl border", r.chip)}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                  {r.role}
-                </div>
-                <div className="text-lg font-bold leading-snug text-slate-900">{r.title}</div>
-                <p className="text-[13px] leading-relaxed text-slate-500">{r.desc}</p>
-                <div className="mt-auto flex items-center gap-1.5 pt-1 text-[13px] font-semibold text-cyan">
-                  {r.cta}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
+              <motion.div key={r.key} variants={staggerItem}>
+                <Link
+                  href={r.href}
+                  className="group flex h-full flex-col gap-3.5 glass-2 rounded-2xl p-6 glass-hover transition-all"
+                  style={{ ["--glow-color" as string]: r.glowColor }}
+                >
+                  <div
+                    className="grid h-12 w-12 place-items-center rounded-xl"
+                    style={{ background: r.glowColor, border: `1px solid ${r.borderColor}` }}
+                  >
+                    <Icon className={cn("h-6 w-6", r.neonClass)} />
+                  </div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted">
+                    {r.role}
+                  </div>
+                  <div className="text-lg font-bold leading-snug text-foreground font-display">{r.title}</div>
+                  <p className="text-[13px] leading-relaxed text-muted">{r.desc}</p>
+                  <div className="mt-auto flex items-center gap-1.5 pt-1 text-[13px] font-semibold text-[#00b4d8]">
+                    {r.cta}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
-        </div>
+        </StaggerContainer>
 
-        <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5 text-[12px] font-medium text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <Users className="h-4 w-4 text-cyan" /> 3 roles · one platform
-          </span>
-          <span className="flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-cyan" /> live geolocation SOS
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Globe2 className="h-4 w-4 text-cyan" /> real rainfall · Open-Meteo
-          </span>
-        </div>
+        {/* Feature chips */}
+        <ScrollReveal>
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5 text-[12px] font-medium text-muted">
+            <span className="flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-[#00b4d8]" /> 3 roles · one platform
+            </span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 text-[#00b4d8]" /> live geolocation SOS
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Globe2 className="h-4 w-4 text-[#00b4d8]" /> real rainfall · Open-Meteo
+            </span>
+          </div>
+        </ScrollReveal>
       </main>
 
-      <section className="relative z-10 w-full border-t border-slate-200 bg-slate-50/60 px-5 py-14 sm:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan">
-            <Rocket className="h-4 w-4" />
-            Future scope &amp; roadmap
-          </div>
-          <h2 className="mb-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-            From a working prototype to a national response loop
-          </h2>
-          <p className="mb-8 max-w-2xl text-[14px] leading-relaxed text-slate-500">
-            Aapda Saarthi ships as an offline-first platform today. Here is the
-            path from that foundation to a system that keeps coordinating even
-            when the network — and the forecast — fail together.
-          </p>
+      {/* Wave divider */}
+      <div className="relative z-10">
+        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full" preserveAspectRatio="none">
+          <path d="M0 60L48 52C96 44 192 28 288 22C384 16 480 20 576 28C672 36 768 48 864 50C960 52 1056 44 1152 36C1248 28 1344 20 1392 16L1440 12V60H1392C1344 60 1248 60 1152 60C1056 60 960 60 864 60C768 60 672 60 576 60C480 60 384 60 288 60C192 60 96 60 48 60H0Z" fill="rgba(255,255,255,0.02)" />
+        </svg>
+      </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Roadmap section */}
+      <section className="relative z-10 w-full border-t border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.15)] px-5 py-14 sm:px-8">
+        <div className="mx-auto max-w-5xl">
+          <ScrollReveal>
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00b4d8]">
+              <Rocket className="h-4 w-4" />
+              Future scope &amp; roadmap
+            </div>
+            <h2 className="mb-2 font-display text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+              From a working prototype to a national response loop
+            </h2>
+            <p className="mb-8 max-w-2xl text-[14px] leading-relaxed text-muted">
+              Aapda Saarthi ships as an offline-first platform today. Here is the
+              path from that foundation to a system that keeps coordinating even
+              when the network — and the forecast — fail together.
+            </p>
+          </ScrollReveal>
+
+          <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" staggerDelay={0.08}>
             {FUTURE_SCOPE.map((f) => {
               const Icon = f.icon;
               return (
-                <div
+                <motion.div
                   key={f.phase}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  variants={staggerItem}
+                  className="flex flex-col gap-3 glass-2 rounded-2xl p-5 glass-hover"
                 >
                   <div className="flex items-center justify-between">
-                    <div className={cn("grid h-10 w-10 place-items-center rounded-xl border", f.chip)}>
-                      <Icon className="h-5 w-5" />
+                    <div className="grid h-10 w-10 place-items-center rounded-xl glass-1">
+                      <Icon className="h-5 w-5 text-[#00b4d8]" />
                     </div>
-                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", f.tag)}>
+                    <span className={cn("rounded-full glass-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", f.statusColor)}>
                       {f.status}
                     </span>
                   </div>
-                  <div className="text-[18px] font-bold leading-snug text-slate-900">{f.title}</div>
-                  <p className="text-[13px] leading-relaxed text-slate-500">{f.desc}</p>
-                  <div className="mt-auto font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+                  <div className="text-[16px] font-bold leading-snug text-foreground font-display">{f.title}</div>
+                  <p className="text-[13px] leading-relaxed text-muted">{f.desc}</p>
+                  <div className="mt-auto font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     Phase {f.phase}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-white/70 px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-muted backdrop-blur-sm">
         AAPDA SAARTHI · AI Disaster Response Intelligence Platform · Decode SIH 2026 · Bharat Shakti PS3
       </footer>
     </div>

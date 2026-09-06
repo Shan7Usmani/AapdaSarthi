@@ -22,7 +22,7 @@ export function ConnectivityBanner() {
   return (
     <div
       className={cn(
-        "relative z-30 flex items-center justify-center gap-2 bg-amber-500/95 px-4 py-2 text-center text-[12px] font-semibold text-slate-900"
+        "relative z-30 flex items-center justify-center gap-2 bg-[rgba(255,176,46,0.2)] px-4 py-2 text-center text-[12px] font-semibold text-[#ffb02e]"
       )}
       role="status"
       aria-live="polite"

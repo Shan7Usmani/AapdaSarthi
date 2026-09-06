@@ -36,7 +36,7 @@ export function RiskTrendChart() {
                 <stop offset="100%" stopColor="#0284c7" stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
             <YAxis
               tick={{ fill: "#64748b", fontSize: 10 }}
@@ -47,12 +47,12 @@ export function RiskTrendChart() {
             />
             <RTooltip
               contentStyle={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
+                background: "rgba(12,18,28,0.95)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 8,
                 fontSize: 11,
               }}
-              labelStyle={{ color: "#0f172a" }}
+              labelStyle={{ color: "#e8eef2" }}
               formatter={(v) => [`${v ?? 0}`, "Signals"]}
             />
             <Area
@@ -85,7 +85,7 @@ export function DistrictImpactChart() {
       <CardContent className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 8, left: -4, bottom: 0 }}>
-            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" horizontal={false} />
+            <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={{ fill: "#64748b", fontSize: 9 }} axisLine={false} tickLine={false} />
             <YAxis
               type="category"
@@ -98,12 +98,12 @@ export function DistrictImpactChart() {
             <RTooltip
               cursor={{ fill: "rgba(2,132,199,0.06)" }}
               contentStyle={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
+                background: "rgba(12,18,28,0.95)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 8,
                 fontSize: 11,
               }}
-              labelStyle={{ color: "#0f172a" }}
+              labelStyle={{ color: "#e8eef2" }}
               formatter={(v) => [formatNum(Number(v ?? 0)), "People"]}
             />
             <Bar dataKey="affected" fill="#2563eb" radius={[0, 3, 3, 0]} barSize={12} />

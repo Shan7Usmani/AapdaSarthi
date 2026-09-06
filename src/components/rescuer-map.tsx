@@ -40,7 +40,7 @@ function FlyTo({ target }: { target: LatLngExpression }) {
 
 function MapSkeleton() {
   return (
-    <div className="grid h-full w-full place-items-center rounded-xl border border-border bg-slate-100 font-mono text-[11px] text-muted">
+    <div className="grid h-full w-full place-items-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] font-mono text-[11px] text-muted">
       Loading live field map…
     </div>
   );
@@ -204,8 +204,8 @@ export function RescuerMap() {
           >
             <FlyTo target={center} />
             <TileLayer
-              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
             />
 
             {/* rescuer position — Google-Maps-style blue location dot */}
@@ -265,15 +265,15 @@ export function RescuerMap() {
 
         {/* selected signal action card */}
         {selected && (
-          <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border-2 border-orange-400 bg-orange-50 p-3">
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border-2 border-[rgba(255,176,46,0.3)] bg-[rgba(255,176,46,0.1)] p-3">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-orange-700">
+              <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-[#ffb02e]">
                 <Siren className="h-3.5 w-3.5" /> {selected.citizenName}
               </div>
-              <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-slate-700">
+              <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[#e8eef2]">
                 {selected.message}
               </p>
-              <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-[10px] text-slate-500">
+              <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-[10px] text-[#6b7d8e]">
                 <span className="flex items-center gap-1">
                   <Users className="h-3 w-3" /> {selected.peopleCount} people
                 </span>

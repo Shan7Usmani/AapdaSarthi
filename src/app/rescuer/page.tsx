@@ -13,11 +13,11 @@ export default function RescuerPage() {
       <RoleNav active="rescuer" />
       <main className="flex flex-1 flex-col items-center gap-6 px-4 py-10">
         <div className="max-w-2xl text-center">
-          <div className="mb-2 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-orange-600">
+          <div className="mb-2 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] neon-amber">
             <ShieldAlert className="h-4 w-4" /> Rescuer dispatch console
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Nearest-signal dispatch</h1>
-          <p className="mx-auto mt-2 max-w-xl text-[13px] leading-relaxed text-slate-500">
+          <h1 className="font-display text-3xl font-black tracking-tight text-foreground">Nearest-signal dispatch</h1>
+          <p className="mx-auto mt-2 max-w-xl text-[13px] leading-relaxed text-muted">
             Incoming SOS signals appear instantly, sorted by distance from your live position. Take
             control, then request exactly what your team needs — medkits, food kits, transport —
             straight to headquarters.
@@ -29,19 +29,19 @@ export default function RescuerPage() {
             <RescuerMap />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[12px] font-medium text-slate-500">
+        <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[12px] font-medium text-muted">
           <span className="flex items-center gap-1.5">
-            <Navigation className="h-4 w-4 text-cyan" /> distance-sorted
+            <Navigation className="h-4 w-4 text-[#00b4d8]" /> distance-sorted
           </span>
           <span className="flex items-center gap-1.5">
-            <Radio className="h-4 w-4 text-cyan" /> one-tap takeover
+            <Radio className="h-4 w-4 text-[#00b4d8]" /> one-tap takeover
           </span>
           <span className="flex items-center gap-1.5">
-            <Package className="h-4 w-4 text-cyan" /> field → HQ requests
+            <Package className="h-4 w-4 text-[#00b4d8]" /> field → HQ requests
           </span>
         </div>
       </main>
-      <footer className="border-t border-slate-200 bg-white/70 px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+      <footer className="border-t border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-muted backdrop-blur-sm">
         AAPDA SAARTHI · Rescuer Dispatch · Decode SIH 2026
       </footer>
     </div>

@@ -22,7 +22,7 @@ export default function HqPage() {
       <main className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
         {/* left — map + analytics */}
         <section className="lg:col-span-8 flex flex-col gap-4">
-          <div className="panel-glow relative h-[52vh] min-h-[460px] overflow-hidden rounded-xl border border-slate-200 bg-panel">
+          <div className="glass-2 relative h-[52vh] min-h-[460px] overflow-hidden rounded-2xl">
             <LiveMap />
           </div>
 
@@ -44,7 +44,7 @@ export default function HqPage() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white/70 px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+      <footer className="border-t border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.2)] px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-muted backdrop-blur-sm">
         AAPDA SAARTHI · AI Disaster Response Intelligence Platform · Decode SIH 2026 · Bharat Shakti PS3
       </footer>
     </div>

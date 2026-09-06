@@ -137,7 +137,7 @@ export function AutoAlerts() {
           )}
         </div>
 
-        <div className="relative rounded-md border border-border-strong bg-slate-50 p-3">
+        <div className="relative rounded-md border border-border-strong bg-[rgba(255,255,255,0.05)] p-3">
           <div className="mb-1.5 flex items-center justify-between">
             <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted">
               <Languages className="h-3 w-3" /> auto SMS · {active.code}
@@ -148,7 +148,7 @@ export function AutoAlerts() {
           </div>
           <p className="text-[12px] leading-relaxed text-foreground/90">{alertText}</p>
           {sent && (
-            <div className="absolute inset-0 grid place-items-center rounded-md bg-white/90 backdrop-blur-sm">
+            <div className="absolute inset-0 grid place-items-center rounded-md bg-[rgba(6,10,16,0.9)] backdrop-blur-sm">
               <div className="flex items-center gap-2 rounded border border-safe/50 bg-safe/10 px-4 py-2 font-mono text-[12px] text-safe">
                 <Send className="h-3.5 w-3.5" />
                 {via === "swytchcode"

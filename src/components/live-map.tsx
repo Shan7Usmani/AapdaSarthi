@@ -41,7 +41,7 @@ const DETAIL_ZOOM = 6.5;
 
 function MapLoading() {
   return (
-    <div className="grid h-full w-full place-items-center bg-panel-2">
+    <div className="grid h-full w-full place-items-center bg-[rgba(255,255,255,0.03)]">
       <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-cyan animate-pulse">
         Initializing national live map…
       </div>
@@ -156,7 +156,7 @@ function LiveRiskLayer({ points }: { points: DistrictRiskOutput[] | null }) {
 
 function LiveRiskSummary({ summary, source }: { summary: string; source: string }) {
   return (
-    <div className="pointer-events-none absolute bottom-24 left-3 z-[1000] max-w-[240px] rounded border border-border-strong bg-white/92 px-3 py-2 shadow-sm backdrop-blur">
+    <div className="pointer-events-none absolute bottom-24 left-3 z-[1000] max-w-[240px] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 shadow-sm backdrop-blur">
       <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-cyan">AI Risk Verdict</div>
       <p className="mt-1 text-[11px] leading-snug text-foreground/90">{summary}</p>
       <div className="mt-1 font-mono text-[8px] uppercase text-muted">live · {source}</div>
@@ -192,7 +192,7 @@ function SafeRouteBanner({
   onRandomize: () => void;
 }) {
   return (
-    <div className="pointer-events-auto absolute bottom-3 left-1/2 z-[1000] w-[min(520px,calc(100%-1.5rem))] -translate-x-1/2 rounded-xl border border-border-strong bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+    <div className="pointer-events-auto absolute bottom-3 left-1/2 z-[1000] w-[min(520px,calc(100%-1.5rem))] -translate-x-1/2 rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(6,10,16,0.95)] px-4 py-3 shadow-lg backdrop-blur">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-cyan">
           <Route className="h-3.5 w-3.5" /> Safe Route Generator
@@ -200,14 +200,14 @@ function SafeRouteBanner({
         <div className="flex gap-1.5">
           <button
             onClick={onRandomize}
-            className="rounded border border-border-strong px-2 py-1 font-mono text-[10px] text-muted hover:text-foreground cursor-pointer"
+            className="rounded border border-[rgba(255,255,255,0.1)] px-2 py-1 font-mono text-[10px] text-muted hover:text-foreground cursor-pointer"
             disabled={loading}
           >
             random demo
           </button>
           <button
             onClick={onClear}
-            className="rounded border border-border-strong px-2 py-1 font-mono text-[10px] text-muted hover:text-danger cursor-pointer"
+            className="rounded border border-[rgba(255,255,255,0.1)] px-2 py-1 font-mono text-[10px] text-muted hover:text-danger cursor-pointer"
           >
             clear
           </button>
@@ -220,11 +220,11 @@ function SafeRouteBanner({
         </p>
       ) : route ? (
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <div className="rounded border border-border bg-panel-2/60 px-2.5 py-1.5">
+          <div className="rounded border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-2.5 py-1.5">
             <div className="font-mono text-[8px] uppercase text-muted">from</div>
             <div className="truncate text-[12px] font-medium text-foreground">{route.from}</div>
           </div>
-          <div className="rounded border border-border bg-panel-2/60 px-2.5 py-1.5">
+          <div className="rounded border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-2.5 py-1.5">
             <div className="font-mono text-[8px] uppercase text-muted">to</div>
             <div className="truncate text-[12px] font-medium text-foreground">{route.to}</div>
           </div>
@@ -424,8 +424,8 @@ export function LiveMap() {
         <ZoomWatcher onZoom={setZoom} />
         <MapClickHandler onPick={handlePick} />
         <TileLayer
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
         />
         <ZoomControl position="bottomright" />
 
@@ -494,7 +494,7 @@ export function LiveMap() {
       </MapContainer>
 
       {/* top-left overlay: live risk summary */}
-      <div className="pointer-events-none absolute top-3 left-3 z-[1000] rounded border border-border-strong bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute top-3 left-3 z-[1000] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 shadow-sm backdrop-blur">
         <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan">
           Live Flood Risk · All India
         </div>
@@ -519,8 +519,8 @@ export function LiveMap() {
           ) ?? [];
         const display = zoneDistricts.slice(0, 12);
         return (
-          <div className="absolute top-3 left-[13.5rem] z-[1000] flex max-h-[70%] w-[230px] flex-col rounded border border-border-strong bg-white/92 shadow-sm backdrop-blur">
-            <div className="flex items-center justify-between border-b border-border-strong px-3 py-2">
+          <div className="absolute top-3 left-[13.5rem] z-[1000] flex max-h-[70%] w-[230px] flex-col rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] shadow-sm backdrop-blur">
+            <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.1)] px-3 py-2">
               <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
                 At-Risk Districts
               </div>
@@ -563,7 +563,7 @@ export function LiveMap() {
       })()}
 
       {/* top-right: at-risk tally from live engine */}
-      <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded border border-border-strong bg-white/90 px-3 py-2 text-right shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 text-right shadow-sm backdrop-blur">
         <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
           At-Risk Districts
         </div>
@@ -576,7 +576,7 @@ export function LiveMap() {
       </div>
 
       {/* top center-right: rainfall source */}
-      <div className="pointer-events-none absolute top-3 right-40 z-[1000] rounded border border-border-strong bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute top-3 right-40 z-[1000] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-3 py-2 shadow-sm backdrop-blur">
         <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-cyan">
           <CloudRain className="h-3 w-3" /> Rainfall
         </div>
@@ -593,27 +593,27 @@ export function LiveMap() {
 
       {/* zoom hint */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-cyan shadow-sm">
+        <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-cyan shadow-sm">
           <ZoomIn className="h-3 w-3" />
           {detailed ? "district detail · routes live" : "zoom in to analyze districts"}
         </div>
         <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
             <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.CRITICAL }} /> Critical zone
           </div>
-          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
             <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.HIGH }} /> High zone
           </div>
-          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
             <span className="h-2 w-2 rounded-sm" style={{ background: riskColor.MODERATE }} /> Moderate zone
           </div>
-          <div className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
+          <div className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm">
             <span className="h-2 w-2 rounded-full border-2 border-white" style={{ background: "#b91c1c" }} /> SOS signal
           </div>
           {(Object.keys(BAND_META) as Array<keyof typeof BAND_META>).map((b) => (
             <div
               key={b}
-              className="flex items-center gap-1.5 rounded border border-border-strong bg-white/90 px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm"
+              className="flex items-center gap-1.5 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 font-mono text-[9px] text-muted shadow-sm"
             >
               <span className="h-2 w-2 rounded-sm" style={{ background: BAND_META[b].color }} />
               {BAND_META[b].label}
@@ -650,7 +650,7 @@ export function LiveMap() {
       )}
 
       {error && (
-        <div className="absolute right-3 bottom-3 z-[1000] flex items-center gap-2 rounded border border-danger/50 bg-white/90 px-3 py-2 font-mono text-[10px] text-danger shadow-sm">
+        <div className="absolute right-3 bottom-3 z-[1000] flex items-center gap-2 rounded border border-danger/50 bg-[rgba(6,10,16,0.92)] px-3 py-2 font-mono text-[10px] text-danger shadow-sm">
           <WifiOff className="h-3 w-3" /> feed unavailable
         </div>
       )}

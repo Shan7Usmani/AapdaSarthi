@@ -44,14 +44,14 @@ export function CitizenMessages() {
       </CardHeader>
       <CardContent className="flex flex-col gap-1.5">
         {all.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border-strong px-3 py-4 text-center text-[11px] text-muted">
+          <p className="rounded-md border border-dashed border-[rgba(255,255,255,0.1)] px-3 py-4 text-center text-[11px] text-muted">
             Confirmations fire automatically when a rescuer takes control of a signal.
           </p>
         ) : (
           all.map((m) => {
             const st = STAGE_CHIP[m.stage];
             return (
-              <div key={m.id} className="rounded-md border border-border bg-panel-2/50 px-3 py-2">
+              <div key={m.id} className="rounded-md border border-border bg-[rgba(255,255,255,0.03)] px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate font-mono text-[9px] text-foreground">
                     {m.to}

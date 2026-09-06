@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("panel-glow rounded-xl bg-panel border border-border", className)}
+      className={cn("glass-2 rounded-2xl", className)}
       {...props}
     >
       {children}
@@ -14,7 +14,7 @@ export function Card({ className, children, ...props }: React.HTMLAttributes<HTM
 
 export function CardHeader({ className, children }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex items-center justify-between gap-3 px-4 pt-3.5 pb-2.5 border-b border-border", className)}>
+    <div className={cn("flex items-center justify-between gap-3 px-4 pt-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]", className)}>
       {children}
     </div>
   );

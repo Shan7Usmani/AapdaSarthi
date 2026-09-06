@@ -5,12 +5,18 @@ type Variant = "default" | "primary" | "ghost" | "outline" | "danger" | "cyan";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<Variant, string> = {
-  default: "bg-panel border border-border-strong text-foreground hover:border-cyan/60 hover:text-cyan",
-  primary: "bg-cyan text-white font-semibold hover:bg-cyan/90 shadow-[0_2px_12px_-2px_rgba(2,132,199,0.5)]",
-  ghost: "text-muted hover:text-foreground hover:bg-panel-2",
-  outline: "border border-border-strong bg-panel text-foreground hover:border-cyan/60 hover:text-cyan",
-  danger: "bg-danger/10 border border-danger/40 text-danger hover:bg-danger/20",
-  cyan: "border border-cyan/40 bg-cyan/5 text-cyan hover:bg-cyan/10",
+  default:
+    "glass-1 text-foreground hover:border-[rgba(0,180,216,0.35)] hover:text-[#00b4d8] hover:shadow-[0_0_16px_rgba(0,180,216,0.12)]",
+  primary:
+    "bg-gradient-to-r from-[#00b4d8] to-[#0096b7] text-white font-semibold shadow-[0_2px_16px_-2px_rgba(0,180,216,0.5)] hover:shadow-[0_4px_24px_-2px_rgba(0,180,216,0.6)] hover:from-[#00c4e8] hover:to-[#00b4d8]",
+  ghost:
+    "text-muted hover:text-foreground hover:bg-[rgba(255,255,255,0.05)]",
+  outline:
+    "glass-1 text-foreground hover:border-[rgba(0,180,216,0.35)] hover:text-[#00b4d8]",
+  danger:
+    "bg-[rgba(255,59,92,0.12)] border border-[rgba(255,59,92,0.4)] text-[#ff6b8a] hover:bg-[rgba(255,59,92,0.2)] hover:shadow-[0_0_16px_rgba(255,59,92,0.15)]",
+  cyan:
+    "border border-[rgba(0,180,216,0.35)] bg-[rgba(0,180,216,0.08)] text-[#00b4d8] hover:bg-[rgba(0,180,216,0.15)] hover:shadow-[0_0_16px_rgba(0,180,216,0.12)]",
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -30,7 +36,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+        "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,180,216,0.5)] disabled:pointer-events-none disabled:opacity-40 cursor-pointer",
         variantClasses[variant],
         sizeClasses[size],
         className
