@@ -2,7 +2,7 @@
 
 > **Flood Response Copilot** · a two-sided resource-allocation platform that connects
 > **citizens in distress** → **nearest rescuer** → **HQ command center** — live, offline-capable, realtime.
-> Live product: **https://production-inky-eight.vercel.app** · Team: FALCONX · DecodeSIH 2026 · BHARAT SHAKTI · PS3
+> Live product: **https://aapdasarthi.vercel.app** · Team: FALCONX · DecodeSIH 2026 · BHARAT SHAKTI · PS3
 
 ---
 

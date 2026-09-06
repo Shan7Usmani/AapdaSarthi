@@ -3,9 +3,9 @@
 > Complete technical briefing so another AI (or engineer) can pick up this codebase cold
 > and start working without re-discovering everything.
 >
-> **Repo path:** `C:\Users\Takhi\Desktop\X\DecodeSih`
-> **Live product:** https://production-inky-eight.vercel.app
-> **Git:** `main` branch, clean working tree, all pushed to `origin/main`.
+> **Repo path:** `C:\Users\Takhi\Desktop\Project\Apdaa Sarthi`
+> **Live product:** https://aapdasarthi.vercel.app
+> **Git:** `main` branch, clean working tree, all pushed to `origin/main`. Production domain connected to Vercel — every push to `main` auto-deploys (`aapdasarthi.vercel.app` + `aapda-sarthi-pearl.vercel.app`).
 
 ---
 
