@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Siren, ShieldAlert, Activity, Waves } from "lucide-react";
+import { ArrowLeft, Siren, ShieldAlert, Activity, Waves, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -57,6 +57,13 @@ export function RoleNav({ active }: { active: "citizen" | "rescuer" | "hq" }) {
               </Link>
             );
           })}
+          <Link
+            href="/logs"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-muted hover:text-foreground hover:bg-[rgba(255,255,255,0.05)] transition-colors cursor-pointer"
+          >
+            <History className="h-3.5 w-3.5 text-[#ffb02e]" />
+            <span className="hidden sm:inline">Logs</span>
+          </Link>
         </div>
       </div>
     </div>
