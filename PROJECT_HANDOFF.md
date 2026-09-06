@@ -433,25 +433,41 @@ Overlays (absolutely positioned):
 
 ## 14. Git history (recent work, newest first)
 
-- `0aa35d4` fix(map): include MODERATE districts in at-risk names panel (show when 0 critical/high)
-- `a57c383` feature(map): at-risk district names panel on HQ, auto-updates with live risk feed
-- `f6e2e36` feature(map): render real flood-risk zones (severity-scaled areas), distinguish SOS signals from zones
-- `674117e` fix(risk): use real past-24h precipitation (daily sum), not hourly forecast, for 24h accumulation
-- `e03585e` refactor(hq): live-only command center — drop 2024 scenario layers, keyless OSM basemap, empty-state panels
-- `8ee478f` fix(hq-map): hide green low-band rainfall and LOW-severity risk dots
-- `7856e80` fix(rescuer): guard MediaChips against missing media field
-- `18fd776` Remove offline-demo (simulate-offline) toggle
-- `369dd61` HQ: live SOS-derived panels + Nepal flood scenario
-- `e167b55` fix HQ white-screen from malformed synced SOS row; harden sync ingress
-- `3cdbbd4` replace default leaflet 'YOU' marker with google-maps-style location dot
-- `8f94933` fix endless list jitter caused by realtime echo feedback loop
-- `df0d00e` add one-page executive pitch sheet for judges
-- `052bd9a` fix rescuer page glitching: unify location source + stop forced form pop
-- `66d3e85` harden offline geolocation: prefer GPS fix + fail fast to saved location
-- `882a80e` harden offline app shell: precache all routes + branded offline fallback
-- `526712e` Add offline-first polish: global offline banner + offline-demo toggle
-- `e9cb6d6` Add offline SOS PWA support
-- `fa5eca3` Initial commit - Aapda Saarthi (DecodeSIH 2026, Bharat Shakti PS3)
+- `1cfc752` chore: remove stray deploy-snapshot folder and scratch files; ignore them going forward
+- `e33db56` chore: replace Groq with Gemini as the sole live AI provider
+- `0ccd144` feat(sms): make 'SMS this citizen' available on the website for the rescuer (not PWA-only); take-control auto-open keeps phone-only guard
+- `acd924c` fix(sms): accept 91-prefixed/0-prefixed citizen numbers in sms: URI (matches formatCitizenPhone); hide button when no valid number instead of dead # link
+- `af6df60` fix(sms+sync+privacy): (1) realtime last-write-wins guard stops stale devices reverting 'delivered' back to 'claimed'; (2) sms: URI leaves recipient un-encoded + platform-correct body separator so the native SMS app actually opens; (3) show full citizen number on HQ + rescuer cards instead of masked
+- `5df49f9` feat(sms): Take control auto-opens the rescuer's native SMS app pre-filled to the citizen's number (phone browsers + PWA); manual 'SMS this citizen' button stays as fallback; HQ/citizen updates unaffected
+- `3686bfc` feat(sms): PWA-only 'SMS this citizen' button opens the rescuer's real SMS app addressed to the citizen's own number, with stage-aware pre-filled message
+- `8601099` feat(sms): auto confirmation SMS back to the citizen's own number on take-control/reached/delivered + citizen inbox + HQ panel + Fast2SMS gateway driver (SIMULATED by default)
+- `a1eba25` feat: SMS confirmations back to citizen on each rescue stage
+- `a38afdd` feat: add resource dispatch lifecycle
+- `da9d392` feat(rescuer+hq): live ground-info updates on every rescue (both roles post) + fix My rescues when identity is blank
+- `7472f04` fix: polish rescuer workflow updates
+- `48e7019` fix(rescuer): Take control always works - auto-assigns 'Rescuer' name when blank + visible build stamp on panel
+- `24aaa08` fix(rescuer): normalize claim identity (trim + case-insensitive) so a taken control never vanishes from My rescues
+- `bd0eee3` feat(alerts): Swytchcode dispatch route with honest simulated fallback
+- `a20da09` feat(R2): full rescue lifecycle - take control -> on site -> deliver item / live resource updates
+- `996ec6d` fix(map): include MODERATE districts in at-risk names panel (show when 0 critical/high)
+- `4d69c67` feature(map): at-risk district names panel on HQ, auto-updates with live risk feed
+- `e722f4e` feature(map): render real flood-risk zones (severity-scaled areas), distinguish SOS signals from zones
+- `4660cf2` fix(risk): use real past-24h precipitation (daily sum), not hourly forecast, for 24h accumulation
+- `fb3e361` refactor(hq): live-only command center — drop 2024 scenario layers, keyless OSM basemap, empty-state panels
+- `35d8b52` fix(hq-map): hide green low-band rainfall and LOW-severity risk dots
+- `359d423` fix(rescuer): guard MediaChips against missing media field
+- `8ac39fb` Remove offline-demo (simulate-offline) toggle
+- `bb160d9` HQ: live SOS-derived panels + Nepal flood scenario
+- `3d6f41e` fix HQ white-screen from malformed synced SOS row; harden sync ingress
+- `4efd594` replace default leaflet 'YOU' marker with google-maps-style location dot
+- `1e544a9` fix endless list jitter caused by realtime echo feedback loop
+- `dbd22f6` add one-page executive pitch sheet for judges
+- `5b8162b` fix rescuer page glitching: unify location source + stop forced form pop
+- `e1dff70` harden offline geolocation: prefer GPS fix + fail fast to saved location
+- `01aa047` harden offline app shell: precache all routes + branded offline fallback
+- `1f00070` Add offline-first polish: global offline banner + offline-demo toggle
+- `da26200` Add offline SOS PWA support
+- `6d4c6c9` Initial commit - Aapda Saarthi (DecodeSIH 2026, Bharat Shakti PS3)
 
 ---
 
