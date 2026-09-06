@@ -15,7 +15,6 @@ import {
   Phone,
 } from "lucide-react";
 import { useSosStore, formatCitizenPhone, type ResourceRequest, type SosItem } from "@/store/sos-store";
-import { SosUpdates } from "@/components/sos-updates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +55,7 @@ function updatedStamp(item: { timestamp: string; updatedAt?: string }) {
   return item.updatedAt || item.timestamp;
 }
 
-function SosCard({ s, onUpdate }: { s: SosItem; onUpdate: (id: string, text: string) => void }) {
+function SosCard({ s }: { s: SosItem }) {
   const st = SOS_STATUS[s.status] ?? SOS_STATUS.open;
   return (
     <div className={cn("flex items-start gap-2.5 rounded-md border px-3 py-2", st.cls)}>
@@ -78,9 +77,6 @@ function SosCard({ s, onUpdate }: { s: SosItem; onUpdate: (id: string, text: str
           )}
           {s.status === "reached" && s.reachedAt && (
             <span className="text-muted">· reached {timeAgo(s.reachedAt)}</span>
-          )}
-          {s.status === "delivered" && s.deliveredAt && (
-            <span className="text-muted">· {timeAgo(s.deliveredAt)}</span>
           )}
         </div>
         <p className="mt-0.5 line-clamp-1 text-[11px] text-muted">{s.message}</p>
@@ -110,13 +106,6 @@ function SosCard({ s, onUpdate }: { s: SosItem; onUpdate: (id: string, text: str
               {s.nearestDistanceKm !== undefined ? ` · ${s.nearestDistanceKm}km` : ""}
             </span>
           )}
-        </div>
-        <div className="mt-1.5">
-          <SosUpdates
-            sos={s}
-            onPost={(text) => onUpdate(s.id, text)}
-            placeholder="HQ advisory / dispatch note…"
-          />
         </div>
       </div>
     </div>
@@ -198,17 +187,18 @@ function RequestCard({
 }
 
 export function HqSosBoard() {
-  const { sos, requests, rescuers, dispatchRequest, addUpdate, resetDemo } = useSosStore();
+  const { sos, requests, rescuers, dispatchRequest, resetDemo } = useSosStore();
   const validSos = sos.filter((s) => s && typeof s.timestamp === "string");
-  const latest = [...validSos].sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a))).slice(0, 6);
-  const openCount = validSos.filter((s) => s.status === "open").length;
-  const inFieldCount = validSos.filter((s) => s.status === "claimed" || s.status === "reached").length;
-  const deliveredCount = validSos.filter((s) => s.status === "delivered").length;
-  const pendingRequests = requests.filter((r) => r && r.status === "pending").length;
+  const activeSos = validSos.filter((s) => s.status !== "delivered");
+  const latest = [...activeSos].sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a))).slice(0, 6);
+  const openCount = activeSos.filter((s) => s.status === "open").length;
+  const inFieldCount = activeSos.filter((s) => s.status === "claimed" || s.status === "reached").length;
+  const activeRequests = requests.filter(
+    (r) => r && typeof r.timestamp === "string" && (r.status === "pending" || r.status === "dispatched" || r.status === "received")
+  );
+  const pendingRequests = activeRequests.filter((r) => r.status === "pending").length;
   const teamsOnline = rescuers.filter((r) => r.online).length;
-  const requestsSorted = [...requests]
-    .filter((r) => r && typeof r.timestamp === "string")
-    .sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a)));
+  const requestsSorted = [...activeRequests].sort((a, b) => updatedStamp(b).localeCompare(updatedStamp(a)));
 
   return (
     <Card className="h-full">
@@ -222,9 +212,6 @@ export function HqSosBoard() {
           </Badge>
           <Badge className="!text-[9px] text-warn border-warn/40 bg-warn/10">
             {inFieldCount} in field
-          </Badge>
-          <Badge className="!text-[9px] text-safe border-safe/40 bg-safe/10">
-            {deliveredCount} delivered
           </Badge>
           <Badge className="!text-[9px] text-cyan border-cyan/40 bg-cyan/10">
             <Radio className="h-2.5 w-2.5" /> {teamsOnline} online
@@ -253,7 +240,7 @@ export function HqSosBoard() {
           ) : (
             <div className="flex flex-col gap-1.5">
               {latest.map((s) => (
-                <SosCard key={s.id} s={s} onUpdate={(id, text) => addUpdate(id, text, "hq")} />
+                <SosCard key={s.id} s={s} />
               ))}
             </div>
           )}
@@ -268,7 +255,7 @@ export function HqSosBoard() {
               <Clock3 className="h-2.5 w-2.5" /> {pendingRequests} pending
             </span>
           </div>
-          {requests.length === 0 ? (
+          {activeRequests.length === 0 ? (
             <div className="rounded-md border border-dashed border-[rgba(255,255,255,0.1)] px-3 py-4 text-center text-[11px] text-muted">
               Rescuers request medkits / food / transport here after taking control.
             </div>
