@@ -1,9 +1,31 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, type ReactNode } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float } from "@react-three/drei";
 import * as THREE from "three";
+
+/** Lightweight replacement for @react-three/drei Float — avoids peer-dep conflict with fiber@10 alpha. */
+function Float({
+  children,
+  speed = 1,
+  floatIntensity = 1,
+  rotationIntensity = 0,
+}: {
+  children: ReactNode;
+  speed?: number;
+  floatIntensity?: number;
+  rotationIntensity?: number;
+}) {
+  const group = useRef<THREE.Group>(null);
+  useFrame((state) => {
+    if (!group.current) return;
+    const t = state.elapsed * speed;
+    group.current.position.y += Math.sin(t) * floatIntensity * 0.01;
+    group.current.rotation.x += Math.sin(t * 0.7) * rotationIntensity * 0.003;
+    group.current.rotation.z += Math.cos(t * 0.5) * rotationIntensity * 0.002;
+  });
+  return <group ref={group}>{children}</group>;
+}
 
 function WaterSurface() {
   const meshRef = useRef<THREE.Mesh>(null);
