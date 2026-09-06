@@ -35,13 +35,16 @@ yarn-error.log*
 
 # vercel
 .vercel
+.vercel-deploy-head-*/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-
 # Serwist generated files
 public/sw.js
 public/swe-worker-*.js
+
+# scratch
+select.txt
+selreq.txt
