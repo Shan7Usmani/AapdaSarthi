@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useMapEvents } from "react-leaflet";
 import { WifiOff, RefreshCw, Route, Navigation } from "lucide-react";
@@ -406,16 +406,26 @@ export function LiveMap({ onInfoUpdate }: { onInfoUpdate?: (data: MapInfoData) =
     [live.openSignals]
   );
 
-  const counts = points
+  const counts = useMemo(() => points
     ? {
         high: points.filter((p) => rainfallBand(p.precipitation) === "high").length,
         moderate: points.filter((p) => rainfallBand(p.precipitation) === "moderate").length,
         low: points.filter((p) => rainfallBand(p.precipitation) === "low").length,
       }
-    : { high: 0, moderate: 0, low: 0 };
+    : { high: 0, moderate: 0, low: 0 },
+    [points]
+  );
 
-  // push computed info to parent panel
+  // push computed info to parent panel (stable refs only to avoid infinite loop)
+  const prevInfoRef = useRef<string>("");
   useEffect(() => {
+    const info = JSON.stringify({
+      critical, high, atRisk, totalOpenPeople, counts, source,
+      riskSummary, liveOpenCount: live.openCount, liveClaimedCount: live.claimedCount,
+      riskPoints, detailed,
+    });
+    if (info === prevInfoRef.current) return;
+    prevInfoRef.current = info;
     onInfoUpdate?.({
       critical,
       high,
