@@ -425,7 +425,7 @@ export function LiveMap() {
         <MapClickHandler onPick={handlePick} />
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <ZoomControl position="bottomright" />
 
@@ -508,7 +508,7 @@ export function LiveMap() {
         </div>
       </div>
 
-      {/* left rail: at-risk district names (auto-updates with risk feed) */}
+      {/* bottom-left: at-risk district chips (compact, above legend) */}
       {(() => {
         const zoneDistricts =
           riskPoints?.filter(
@@ -517,46 +517,29 @@ export function LiveMap() {
               d.severity === "HIGH" ||
               d.severity === "MODERATE"
           ) ?? [];
-        const display = zoneDistricts.slice(0, 12);
+        const display = zoneDistricts.slice(0, 8);
+        if (display.length === 0) return null;
         return (
-          <div className="absolute top-3 left-[13.5rem] z-[1000] flex max-h-[70%] w-[230px] flex-col rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] shadow-sm backdrop-blur">
-            <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.1)] px-3 py-2">
-              <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
-                At-Risk Districts
-              </div>
-              <div className="font-mono text-[8px] uppercase text-cyan">auto ✓</div>
+          <div className="pointer-events-auto absolute bottom-14 left-3 z-[1000] max-w-[320px] rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(6,10,16,0.92)] px-2.5 py-1.5 shadow-sm backdrop-blur">
+            <div className="mb-1 font-mono text-[8px] uppercase tracking-[0.15em] text-muted">
+              At-Risk Districts
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {display.length === 0 ? (
-                <div className="px-3 py-3 font-mono text-[10px] text-muted">
-                  All districts safe right now.
-                </div>
-              ) : (
-                <ul className="divide-y divide-border-strong/40">
-                  {display.map((d) => (
-                    <li
-                      key={d.name}
-                      className="flex items-center gap-2 px-3 py-1.5"
-                    >
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: riskColor[d.severity as RiskBand] ?? riskColor.LOW }}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[11px] font-medium text-foreground">
-                          {d.name}
-                        </span>
-                        <span className="block font-mono text-[9px] text-muted">
-                          {d.state}
-                        </span>
-                      </span>
-                      <span className="shrink-0 font-mono text-[10px] font-bold" style={{ color: riskColor[d.severity as RiskBand] }}>
-                        {d.riskScore}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="flex flex-wrap gap-1">
+              {display.map((d) => (
+                <span
+                  key={d.name}
+                  className="inline-flex items-center gap-1 rounded-sm border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-1.5 py-0.5 font-mono text-[9px]"
+                >
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: riskColor[d.severity as RiskBand] ?? riskColor.LOW }}
+                  />
+                  <span className="text-foreground">{d.name}</span>
+                  <span style={{ color: riskColor[d.severity as RiskBand] }} className="font-bold">
+                    {d.riskScore}
+                  </span>
+                </span>
+              ))}
             </div>
           </div>
         );
